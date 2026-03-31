@@ -1,23 +1,68 @@
+import { ChevronLeft, UserPlus, FileText, Sparkles, Share2 } from 'lucide-react';
+
 export default function AdminPage() {
   return (
-    <div className="flex flex-col gap-6 flex-1">
+    <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full pb-10">
       <header>
-        <h2 className="text-2xl font-bold text-primary">הגדרות מנהל</h2>
-        <p className="text-secondary text-sm mt-1">ניהול המערכת והגדרות מתקדמות</p>
+        <h2 className="text-3xl font-black text-primary tracking-tight">ניהול מערכת</h2>
+        <p className="text-secondary mt-1">פאנל שליטה למנהלים - שרלוקד סושיאל</p>
       </header>
 
-      <div className="flex flex-col gap-4">
-        <a href="/admin/social" className="bg-elevated hover:bg-hover hover:border-teal/50 transition-colors border border-border-subtle rounded-xl p-5 flex items-center justify-between group cursor-pointer">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-surface rounded-lg text-teal">
-              <svg xmlns="http://www.2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Operator Management */}
+        <a href="/admin/settings" className="bg-elevated hover:bg-teal/5 hover:border-teal/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
+            <div className="w-12 h-12 bg-teal/10 rounded-2xl flex items-center justify-center text-teal group-hover:scale-110 transition-transform">
+                <UserPlus className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-primary font-medium text-lg">חיבורי סושיאל</p>
-              <p className="text-secondary text-sm mt-0.5">ניהול אסימוני גישה ל-Meta</p>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-primary">ניהול מפעילים</h3>
+                <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-teal group-hover:translate-x-[-4px] transition-all" />
+              </div>
+              <p className="text-secondary text-sm mt-2 leading-relaxed">הוספה ועדכון שמות העובדים במערכת, וניהול הרשאות בסיסיות.</p>
             </div>
-          </div>
-          <svg className="text-secondary group-hover:text-teal transition-colors" xmlns="http://www.2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+
+        {/* Bonus Reports */}
+        <a href="/admin/reports" className="bg-elevated hover:bg-blue-500/5 hover:border-blue-500/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
+            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-primary">דוחות ובונוסים</h3>
+                <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-blue-500 group-hover:translate-x-[-4px] transition-all" />
+              </div>
+              <p className="text-secondary text-sm mt-2 leading-relaxed">סיכום פעילות חודשית לפי מפעיל וייצא דוחות CSV לתשלום בונוסים.</p>
+            </div>
+        </a>
+
+        {/* AI Room Prompts */}
+        <a href="/admin/settings" className="bg-elevated hover:bg-orange-500/5 hover:border-orange-500/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
+            <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-primary">הגדרות AI וחדרים</h3>
+                <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-orange-500 group-hover:translate-x-[-4px] transition-all" />
+              </div>
+              <p className="text-secondary text-sm mt-2 leading-relaxed">עדכון פרומפטים ייחודיים לכל חדר קווסט ליצירת כיתובים מדויקים.</p>
+            </div>
+        </a>
+
+        {/* Social Meta Status */}
+        <a href="/admin/social" className="bg-elevated hover:bg-[#1877F2]/5 hover:border-[#1877F2]/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
+            <div className="w-12 h-12 bg-[#1877F2]/10 rounded-2xl flex items-center justify-center text-[#1877F2] group-hover:scale-110 transition-transform">
+                <Share2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-primary">חיבורי Meta Social</h3>
+                <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-[#1877F2] group-hover:translate-x-[-4px] transition-all" />
+              </div>
+              <p className="text-secondary text-sm mt-2 leading-relaxed">בדיקת תקינות חיבורי פייסבוק ואינסטגרם ורענון טוקנים ידני.</p>
+            </div>
         </a>
       </div>
     </div>

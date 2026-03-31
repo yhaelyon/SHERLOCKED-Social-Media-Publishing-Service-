@@ -24,12 +24,8 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.success) {
-        // Redirect based on role
-        if (data.role === 'manager') {
-          router.push('/admin');
-        } else {
-          router.push('/upload');
-        }
+        // Redirection for ALL users is now /upload
+        router.push('/upload');
         router.refresh();
       } else {
         setError('שם משתמש או סיסמה שגויים');

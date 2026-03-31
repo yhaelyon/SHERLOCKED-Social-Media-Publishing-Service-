@@ -1,150 +1,179 @@
-import { createClient } from '@supabase/supabase-js';
-import { RefreshCcw, BarChart3, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+"use client";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { useState, useEffect } from 'react';
+import { RefreshCcw, BarChart3, ChevronRight, CheckCircle2, XCircle, ShieldCheck, Activity, Loader2, AlertCircle } from 'lucide-react';
 
-export const revalidate = 0;
+export default function AdminSocialPage() {
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
 
-export default async function AdminSocialPage() {
-  const token = process.env.META_ACCESS_TOKEN;
-  const igId = process.env.META_INSTAGRAM_ID;
-  const pageId = process.env.META_FACEBOOK_PAGE_ID;
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
-  let igData = null;
-  let fbData = null;
-  let expiresDays = 0;
-
-  try {
-    const [igResult, fbResult] = await Promise.allSettled([
-      fetch(`https://graph.facebook.com/v25.0/${igId}?fields=username,profile_picture_url&access_token=${token}`),
-      fetch(`https://graph.facebook.com/v25.0/${pageId}?fields=name,id&access_token=${token}`)
-    ]);
-
-    igData = igResult.status === 'fulfilled' ? await igResult.value.json() : null;
-    fbData = fbResult.status === 'fulfilled' ? await fbResult.value.json() : null;
-
-    if (token) {
-      const debugRes = await fetch(`https://graph.facebook.com/debug_token?input_token=${token}&access_token=${token}`);
-      const debugData = await debugRes.json();
-      const expiresAt = debugData?.data?.expires_at ? new Date(debugData.data.expires_at * 1000) : null;
-      expiresDays = expiresAt ? Math.floor((expiresAt.getTime() - Date.now()) / 86400000) : 0;
+  const fetchStatus = async () => {
+    setLoading(true);
+    try {
+        // We'll call a combined status API
+        const res = await fetch('/api/meta/status');
+        const json = await res.json();
+        setData(json);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-  }
+  };
 
-  // Statistics
-  const { count: totalPosts } = await supabase.from('posts').select('*', { count: 'exact', head: true });
-  
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const { count: thisWeekPosts } = await supabase
-      .from('posts')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', sevenDaysAgo.toISOString());
+  const verifyConnection = async () => {
+    setVerifying(true);
+    setTestResult(null);
+    try {
+        const res = await fetch('/api/meta/verify');
+        const json = await res.json();
+        if (json.success) {
+            setTestResult({ success: true, message: `החיבור תקין! הטוקן יפוג בעוד ${Math.floor((json.expires_at - Date.now()/1000)/86400)} ימים.` });
+        } else {
+            setTestResult({ success: false, message: `שגיאת חיבור: ${json.error}` });
+        }
+    } catch (err) {
+        setTestResult({ success: false, message: 'נכשל בניסיון התחברות לשרת Meta' });
+    } finally {
+        setVerifying(false);
+    }
+  };
 
-  const { data: counter } = await supabase.from('post_counter').select('total_count').single();
-  const currentCount = counter?.total_count || 0;
-  const currIndex = (currentCount % 5) === 0 && currentCount > 0 ? 5 : (currentCount % 5);
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-10 h-10 text-teal animate-spin" /></div>;
 
-  const isIgConnected = igData && !igData.error;
-  const isFbConnected = fbData && !fbData.error;
+  const isIgConnected = data?.ig?.username && !data?.ig?.error;
+  const isFbConnected = data?.fb?.name && !data?.fb?.error;
 
   return (
-    <div className="flex flex-col gap-6 flex-1">
+    <div className="flex flex-col gap-8 flex-1 max-w-4xl mx-auto w-full pb-12">
       <header className="flex flex-col gap-2">
-        <a href="/admin" className="text-secondary hover:text-primary text-sm flex items-center gap-1 w-fit transition-colors">
-          <ChevronRight className="w-4 h-4" /> חזרה להגדרות
+        <a href="/admin" className="text-secondary hover:text-primary text-sm flex items-center gap-1 w-fit transition-all hover:translate-x-1">
+          <ChevronRight className="w-4 h-4" /> חזרה לתפריט ניהול
         </a>
-        <div className="mt-1">
-          <h2 className="text-2xl font-bold text-primary">פאנל שליטה: סושיאל</h2>
-          <p className="text-secondary text-sm mt-1">ניהול סטטוס חיבורים וסטטיסטיקת פרסומים</p>
+        <div className="mt-2 text-right">
+          <h2 className="text-3xl font-black text-primary tracking-tight">סטטוס חיבורי Meta</h2>
+          <p className="text-secondary mt-1">בדיקת תקינות החיבור לאינסטגרם ופייסבוק</p>
         </div>
       </header>
 
-      <div className="flex flex-col gap-4">
+      {testResult && (
+        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${testResult.success ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+          {testResult.success ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <p className="text-sm font-bold">{testResult.message}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Instagram Card */}
-        <div className="bg-elevated rounded-xl border border-border-subtle p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4 border-b border-border-subtle pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-[#E1306C]/10 text-[#E1306C] rounded-lg">
+        <div className="bg-elevated rounded-3xl border border-border-subtle p-6 shadow-xl relative overflow-hidden group">
+          <div className={`absolute top-0 right-0 w-1 h-full ${isIgConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-[#E1306C]/10 text-[#E1306C] rounded-2xl">
                 <svg xmlns="http://www.2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               </div>
-              <p className="text-primary font-bold text-lg">Instagram</p>
+              <p className="text-xl font-black text-primary">Instagram</p>
             </div>
             {isIgConnected ? (
-              <span className="bg-green-500/10 text-green-500 px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="w-4 h-4" /> מחובר
-              </span>
+              <span className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">CONNECTED</span>
             ) : (
-              <span className="bg-red/10 text-red px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 font-bold">
-                <XCircle className="w-4 h-4" /> מנותק
-              </span>
+              <span className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">DISCONNECTED</span>
             )}
           </div>
           
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex justify-between text-secondary">Account ID: <span className="text-primary" dir="ltr">{igId || 'N/A'}</span></div>
-            <div className="flex justify-between text-secondary">Token expiration: <span className="text-primary">{expiresDays > 0 ? expiresDays + ' days' : 'Expired'}</span></div>
-            <div className="flex justify-between text-secondary">Username: <span className="text-primary font-medium" dir="ltr">@{igData?.username || 'N/A'}</span></div>
+          <div className="space-y-4">
+            <div className="bg-base/50 p-4 rounded-2xl border border-border-subtle/50">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-secondary uppercase opacity-50">Username</span>
+                    <span className="text-primary font-bold text-lg" dir="ltr">@{data?.ig?.username || 'N/A'}</span>
+                </div>
+            </div>
+            <div className="flex justify-between px-2 text-xs font-bold">
+                <span className="text-secondary tracking-tight">Account ID</span>
+                <span className="text-primary opacity-60" dir="ltr">{data?.ig_id || 'N/A'}</span>
+            </div>
           </div>
         </div>
 
         {/* Facebook Card */}
-        <div className="bg-elevated rounded-xl border border-border-subtle p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4 border-b border-border-subtle pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-[#1877F2]/10 text-[#1877F2] rounded-lg">
+        <div className="bg-elevated rounded-3xl border border-border-subtle p-6 shadow-xl relative overflow-hidden group">
+          <div className={`absolute top-0 right-0 w-1 h-full ${isFbConnected ? 'bg-[#1877F2]' : 'bg-red-500'}`} />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-[#1877F2]/10 text-[#1877F2] rounded-2xl">
                 <svg xmlns="http://www.2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
               </div>
-              <p className="text-primary font-bold text-lg">Facebook</p>
+              <p className="text-xl font-black text-primary">Facebook</p>
             </div>
             {isFbConnected ? (
-              <span className="bg-green-500/10 text-green-500 px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="w-4 h-4" /> מחובר
-              </span>
+              <span className="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">CONNECTED</span>
             ) : (
-              <span className="bg-red/10 text-red px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 font-bold">
-                <XCircle className="w-4 h-4" /> מנותק
-              </span>
+              <span className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">DISCONNECTED</span>
             )}
           </div>
           
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex justify-between text-secondary">Page ID: <span className="text-primary" dir="ltr">{pageId || 'N/A'}</span></div>
-            <div className="flex justify-between text-secondary">Token expiration: <span className="text-primary">{expiresDays > 0 ? expiresDays + ' days' : 'Expired'}</span></div>
-            <div className="flex justify-between text-secondary">Page Name: <span className="text-primary font-medium">{fbData?.name || 'N/A'}</span></div>
-          </div>
-        </div>
-
-        {/* Stats Card */}
-        <div className="bg-surface rounded-xl border border-border p-5 shadow-sm mt-2">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-5 h-5 text-teal" />
-            <h3 className="text-lg font-bold text-primary">סטטיסטיקות</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-elevated border border-border-subtle p-4 rounded-lg flex flex-col items-center justify-center text-center">
-              <p className="text-secondary text-xs mb-1">סה"כ פוסטים</p>
-              <p className="text-2xl font-bold text-primary">{totalPosts || 0}</p>
+          <div className="space-y-4">
+            <div className="bg-base/50 p-4 rounded-2xl border border-border-subtle/50">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-secondary uppercase opacity-50">Page Name</span>
+                    <span className="text-primary font-bold text-lg">{data?.fb?.name || 'N/A'}</span>
+                </div>
             </div>
-            <div className="bg-elevated border border-border-subtle p-4 rounded-lg flex flex-col items-center justify-center text-center">
-              <p className="text-secondary text-xs mb-1">פורסמו השבוע</p>
-              <p className="text-2xl font-bold text-teal">{thisWeekPosts || 0}</p>
+            <div className="flex justify-between px-2 text-xs font-bold">
+                <span className="text-secondary tracking-tight">Page ID</span>
+                <span className="text-primary opacity-60" dir="ltr">{data?.fb_id || 'N/A'}</span>
             </div>
           </div>
-          <div className="mt-3 bg-elevated border border-border-subtle p-4 rounded-lg flex items-center justify-between">
-            <p className="text-secondary text-sm">אינדקס פוסט באצווה:</p>
-            <p className="font-bold text-primary">{currIndex === 0 && currentCount === 0 ? '0' : currIndex}/5</p>
-          </div>
         </div>
+      </div>
 
-        <button className="bg-surface hover:bg-hover border border-border-subtle text-primary font-medium py-4 rounded-xl transition-colors w-full flex items-center justify-center gap-2 shadow-sm mt-2 group">
-          <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-          חדש טוקן ידנית (עדכון מפתח ל-60 יום)
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <button 
+           onClick={verifyConnection}
+           disabled={verifying}
+           className="bg-white/5 hover:bg-teal hover:text-white border border-border-subtle hover:border-teal rounded-2xl py-6 transition-all shadow-xl font-black text-lg flex items-center justify-center gap-3 disabled:opacity-50"
+        >
+          {verifying ? <Loader2 className="w-6 h-6 animate-spin" /> : <ShieldCheck className="w-6 h-6" />}
+          לחץ כאן לבדיקת תקינות החיבור
         </button>
+
+        <button 
+           className="bg-white/5 hover:bg-primary hover:text-base border border-border-subtle hover:border-primary rounded-2xl py-6 transition-all shadow-xl font-black text-lg flex items-center justify-center gap-3"
+        >
+          <RefreshCcw className="w-6 h-6" />
+          רענון טוקן (חידוש ל-60 יום)
+        </button>
+      </div>
+
+      <div className="bg-surface border border-border-subtle p-8 rounded-3xl mt-4 shadow-2xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 bg-teal/10 rounded-lg text-teal"><Activity className="w-5 h-5" /></div>
+            <h3 className="text-xl font-black text-primary">סטטיסטיקות שימוש</h3>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-base/40 border border-border-subtle p-5 rounded-2xl">
+              <p className="text-secondary text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">סה"כ פוסטים</p>
+              <p className="text-3xl font-black text-primary">{data?.stats?.total || 0}</p>
+            </div>
+            <div className="bg-base/40 border border-border-subtle p-5 rounded-2xl">
+              <p className="text-secondary text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">השבוע האחרון</p>
+              <p className="text-3xl font-black text-teal">+{data?.stats?.week || 0}</p>
+            </div>
+            <div className="bg-base/40 border border-border-subtle p-5 rounded-2xl">
+              <p className="text-secondary text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">יתרה לאצווה</p>
+              <p className="text-3xl font-black text-primary">{(data?.stats?.counter % 5) || 0}/5</p>
+            </div>
+            <div className="bg-base/40 border border-border-subtle p-5 rounded-2xl">
+               <p className="text-secondary text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">תוקף טוקן</p>
+               <p className="text-3xl font-black text-orange-500">{data?.expires_days || 0}d</p>
+            </div>
+          </div>
       </div>
     </div>
   );

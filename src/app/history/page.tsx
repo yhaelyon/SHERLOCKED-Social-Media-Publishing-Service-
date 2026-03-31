@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Calendar, Image as ImageIcon, Video, CheckCircle2, XCircle, AlertCircle, User, DoorOpen, MapPin } from 'lucide-react';
+import { Calendar, Image as ImageIcon, Video, CheckCircle2, XCircle, AlertCircle, User, DoorOpen, MapPin, Loader2 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -97,23 +97,23 @@ export default async function HistoryPage() {
                     </p>
                   </div>
                   
-                  <div className="mt-auto grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="mt-auto pt-4 border-t border-border-subtle/30 flex flex-wrap gap-2">
                     {[
-                      { l: 'INSTAGRAM FEED', s: post.ig_feed_status },
-                      { l: 'INSTAGRAM STORY', s: post.ig_story_status },
-                      { l: 'FACEBOOK FEED', s: post.fb_feed_status },
-                      { l: 'FACEBOOK STORY', s: post.fb_story_status }
+                      { l: 'FB STORY', s: post.fb_story_status },
+                      { l: 'FB FEED', s: post.fb_feed_status },
+                      { l: 'IG STORY', s: post.ig_story_status },
+                      { l: 'IG FEED', s: post.ig_feed_status }
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center justify-between bg-surface/50 px-3 py-2 rounded-xl border border-border-subtle/50">
-                        <span className="text-[10px] font-bold text-secondary tracking-tight">{t.l}</span>
+                      <div key={i} className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1.5 rounded-lg border border-border-subtle/50">
+                        <span className="text-[9px] font-black text-secondary/70 uppercase tracking-tighter">{t.l}</span>
                         {t.s === 'published' ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-500 drop-shadow-sm" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                         ) : t.s === 'failed' ? (
-                          <XCircle className="w-4 h-4 text-red-500 drop-shadow-sm" />
+                          <XCircle className="w-3.5 h-3.5 text-red-500" />
                         ) : ( t.s === 'skipped' ? (
-                          <span className="text-border-subtle text-[10px] font-black">---</span>
+                          <span className="text-border-subtle text-[9px] font-black">--</span>
                         ) : (
-                          <div className="w-3.5 h-3.5 rounded-full border-2 border-teal border-t-transparent animate-spin"></div>
+                          <Loader2 className="w-3 h-3 text-teal animate-spin" />
                         ))}
                       </div>
                     ))}

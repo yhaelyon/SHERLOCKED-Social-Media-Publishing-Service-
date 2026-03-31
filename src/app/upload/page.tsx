@@ -160,7 +160,7 @@ export default function UploadPage() {
 
       {/* SCREEN 1: UPLOAD */}
       {step === 'UPLOAD' && (
-        <>
+        <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
           {uploadError && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-500 flex items-start gap-4 p-5 rounded-2xl animate-in fade-in zoom-in duration-300">
               <XCircle className="w-6 h-6 shrink-0 mt-0.5" />
@@ -168,117 +168,113 @@ export default function UploadPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Form Column */}
-            <div className="flex flex-col gap-6 order-2 md:order-1">
-              <div className="bg-elevated rounded-2xl p-6 border border-border-subtle shadow-xl flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-secondary flex items-center gap-2">
-                    <User className="w-4 h-4 text-teal" /> מי המפעיל?
-                  </label>
-                  <select 
-                    value={selectedOperator}
-                    onChange={(e) => setSelectedOperator(e.target.value)}
-                    className="bg-base border border-border-subtle rounded-xl px-4 py-3 text-primary focus:outline-none focus:ring-2 focus:ring-teal/50 focus:border-teal transition-all appearance-none"
-                  >
-                    <option value="">בחר מפעיל...</option>
-                    {operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-secondary flex items-center gap-2">
-                    <DoorOpen className="w-4 h-4 text-teal" /> איזה חדר שיחקו?
-                  </label>
-                  <select 
-                    value={selectedRoom}
-                    onChange={(e) => setSelectedRoom(e.target.value)}
-                    className="bg-base border border-border-subtle rounded-xl px-4 py-3 text-primary focus:outline-none focus:ring-2 focus:ring-teal/50 focus:border-teal transition-all appearance-none"
-                  >
-                    <option value="">בחר חדר...</option>
-                    <optgroup label="סניף מערב">
-                      {rooms.filter(r => r.branch === 'מערב').map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
-                    </optgroup>
-                    <optgroup label="סניף מזרח">
-                      {rooms.filter(r => r.branch === 'מזרח').map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
-                    </optgroup>
-                  </select>
-                </div>
-              </div>
-
-              {fileData && (
-                <button 
-                  onClick={handlePublishNow}
-                  className="bg-teal hover:bg-teal/90 text-lg font-bold py-4 rounded-2xl transition-all shadow-lg shadow-teal/20 w-full flex items-center justify-center gap-3 active:scale-[0.98]"
-                >
-                  <span className="text-2xl">🚀</span>
-                  <span>פרסם עכשיו רובוטית!</span>
-                </button>
-              )}
-            </div>
-
-            {/* Media Column */}
-            <div className="order-1 md:order-2">
-              {fileData ? (
-                <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                  <div className="bg-elevated rounded-2xl border border-border-subtle overflow-hidden shadow-2xl relative group">
-                    <div className="aspect-[4/5] bg-base w-full flex items-center justify-center border-b border-border-subtle">
-                      {fileData.type === 'image' ? (
-                        <img src={fileData.url} alt="Preview" className="object-contain w-full h-full" />
-                      ) : (
-                        <video src={fileData.url} controls className="w-full h-full object-contain" />
-                      )}
-                    </div>
-                    <button 
-                      onClick={() => setFileData(null)}
-                      className="absolute top-4 right-4 bg-black/60 hover:bg-red-500/80 p-2 rounded-full backdrop-blur-md transition-all text-white border border-white/20 shadow-lg"
-                    >
-                      <XCircle className="w-6 h-6" />
-                    </button>
-                    <div className="p-4 bg-elevated/80 backdrop-blur-md">
-                        <p className="text-secondary text-xs uppercase tracking-widest font-bold">תצוגה מקדימה</p>
-                        <p className="text-primary font-medium truncate mt-1" dir="ltr">{fileData.name}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  onClick={() => !isUploadingFile && fileInputRef.current?.click()}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  className={`
-                    border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-6 transition-all cursor-pointer group h-[500px] shadow-inner
-                    ${isDragging ? 'border-teal bg-teal/5 ring-4 ring-teal/10' : 'border-border-subtle hover:border-teal/40 hover:bg-elevated/50 p-12'}
-                    ${isUploadingFile ? 'opacity-50 pointer-events-none' : ''}
-                  `}
-                >
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime text-left" onChange={handleFileInput} />
-                  <div className={`p-8 rounded-full transition-all shadow-xl ${isDragging ? 'bg-teal text-white scale-110' : 'bg-elevated text-teal group-hover:scale-110 group-hover:bg-teal group-hover:text-white'}`}>
-                    <UploadCloud className="w-12 h-12" />
-                  </div>
-                  <div className="text-center">
-                    {isUploadingFile ? (
-                      <div className="flex flex-col items-center">
-                        <Loader2 className="w-10 h-10 text-teal animate-spin mb-4" />
-                        <p className="text-primary font-bold text-xl">מעבד קובץ...</p>
-                        <p className="text-secondary text-sm mt-2 font-medium">מעלה למאגר הענן המאובטח של שרלוקד</p>
-                      </div>
+          {/* Media Area */}
+          <div className="w-full">
+            {fileData ? (
+              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-elevated rounded-3xl border border-border-subtle overflow-hidden shadow-2xl relative group">
+                  <div className="aspect-[4/5] bg-base w-full flex items-center justify-center">
+                    {fileData.type === 'image' ? (
+                      <img src={fileData.url} alt="Preview" className="object-cover w-full h-full" />
                     ) : (
-                      <>
-                        <p className="text-primary font-bold text-xl mb-3">לחץ או גרור תמונה/וידאו</p>
-                        <div className="flex items-center justify-center gap-4 text-secondary/60 font-medium">
-                          <span className="flex items-center gap-2 bg-base px-4 py-2 rounded-lg border border-border-subtle"><ImageIcon className="w-5 h-5" /> JPG/PNG</span>
-                          <span className="flex items-center gap-2 bg-base px-4 py-2 rounded-lg border border-border-subtle"><VideoIcon className="w-5 h-5" /> MP4/MOV</span>
-                        </div>
-                      </>
+                      <video src={fileData.url} controls className="w-full h-full object-cover" />
                     )}
                   </div>
+                  <button 
+                    onClick={() => setFileData(null)}
+                    className="absolute top-4 right-4 bg-black/60 hover:bg-red-500/80 p-2 rounded-full backdrop-blur-md transition-all text-white border border-white/20 shadow-lg"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div 
+                onClick={() => !isUploadingFile && fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
+                  border-2 border-dashed rounded-3xl flex flex-col items-center justify-center gap-6 transition-all cursor-pointer group min-h-[360px] shadow-inner
+                  ${isDragging ? 'border-teal bg-teal/5 ring-4 ring-teal/10' : 'border-border-subtle hover:border-teal/40 hover:bg-elevated/50 p-8'}
+                  ${isUploadingFile ? 'opacity-50 pointer-events-none' : ''}
+                `}
+              >
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" onChange={handleFileInput} />
+                <div className={`p-6 rounded-full transition-all shadow-xl ${isDragging ? 'bg-teal text-white scale-110' : 'bg-elevated text-teal group-hover:scale-110 group-hover:bg-teal group-hover:text-white'}`}>
+                  <UploadCloud className="w-10 h-10" />
+                </div>
+                <div className="text-center px-4">
+                  {isUploadingFile ? (
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-8 h-8 text-teal animate-spin mb-4" />
+                      <p className="text-primary font-bold text-lg">מעבד קובץ...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-primary font-black text-xl mb-3 leading-tight">לחץ או גרור תמונה/וידאו לכאן</p>
+                      <div className="flex items-center justify-center gap-2 text-secondary/50 font-bold text-xs uppercase tracking-widest">
+                        <span>JPG</span>
+                        <span className="w-1 h-1 bg-border-subtle rounded-full"></span>
+                        <span>PNG</span>
+                        <span className="w-1 h-1 bg-border-subtle rounded-full"></span>
+                        <span>MP4</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        </>
+
+          {/* Form Area */}
+          <div className="flex flex-col gap-5">
+            <div className="bg-elevated rounded-2xl p-6 border border-border-subtle shadow-xl flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-black text-secondary/80 flex items-center gap-2 uppercase tracking-tighter">
+                  <User className="w-3.5 h-3.5 text-teal" /> מי המפעיל?
+                </label>
+                <select 
+                  value={selectedOperator}
+                  onChange={(e) => setSelectedOperator(e.target.value)}
+                  className="bg-base border border-border-subtle rounded-xl px-4 py-3.5 text-primary font-bold focus:outline-none focus:ring-2 focus:ring-teal/50 focus:border-teal transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">בחר מפעיל...</option>
+                  {operators.map(op => <option key={op.id} value={op.name}>{op.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-black text-secondary/80 flex items-center gap-2 uppercase tracking-tighter">
+                  <DoorOpen className="w-3.5 h-3.5 text-teal" /> איזה חדר שיחקו?
+                </label>
+                <select 
+                  value={selectedRoom}
+                  onChange={(e) => setSelectedRoom(e.target.value)}
+                  className="bg-base border border-border-subtle rounded-xl px-4 py-3.5 text-primary font-bold focus:outline-none focus:ring-2 focus:ring-teal/50 focus:border-teal transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">בחר חדר...</option>
+                  <optgroup label="סניף מערב">
+                    {rooms.filter(r => r.branch === 'מערב').map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                  </optgroup>
+                  <optgroup label="סניף מזרח">
+                    {rooms.filter(r => r.branch === 'מזרח').map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            {fileData && (
+              <button 
+                onClick={handlePublishNow}
+                className="bg-teal hover:bg-teal/90 text-white font-black text-xl py-5 rounded-2xl transition-all shadow-xl shadow-teal/30 w-full flex items-center justify-center gap-3 active:scale-[0.98]"
+              >
+                <span>🚀</span>
+                <span>שלח לפרסום עכשיו</span>
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* SCREEN 2: PUBLISHING (AUTO) */}

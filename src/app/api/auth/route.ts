@@ -40,6 +40,13 @@ export async function POST(req: Request) {
   }
 }
 
+export async function GET(req: Request) {
+  const { origin } = new URL(req.url);
+  const response = NextResponse.redirect(new URL('/login', origin));
+  response.cookies.delete('auth_session');
+  return response;
+}
+
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
   response.cookies.delete('auth_session');
