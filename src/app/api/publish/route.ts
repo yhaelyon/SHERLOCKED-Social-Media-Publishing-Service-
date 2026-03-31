@@ -153,14 +153,14 @@ export async function POST(req: Request) {
     // Process results back into DB
     const updatePayload: any = { error_details: {} };
     rawResults.forEach(r => {
-      const isOk = !r.err;
+      const isOk = !r!(r as any).err;
       const t = r.t;
       if (t === 'ig_feed') { updatePayload.ig_feed_status = isOk ? 'published' : 'failed'; updatePayload.ig_feed_media_id = isOk ? r.id : null; }
       if (t === 'ig_story') { updatePayload.ig_story_status = isOk ? 'published' : 'failed'; updatePayload.ig_story_media_id = isOk ? r.id : null; }
       if (t === 'fb_feed') { updatePayload.fb_feed_status = isOk ? 'published' : 'failed'; updatePayload.fb_feed_post_id = isOk ? r.id : null; }
       if (t === 'fb_story') { updatePayload.fb_story_status = isOk ? 'published' : 'failed'; updatePayload.fb_story_media_id = isOk ? r.id : null; }
       
-      if (r.err) updatePayload.error_details[t] = r.err;
+            if ((r as any).err) updatePayload.error_details[t] = (r as any).err;
     });
 
     await fileSupabase.from('posts').update(updatePayload).eq('id', post.id);
