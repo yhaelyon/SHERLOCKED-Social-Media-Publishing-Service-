@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const fileSupabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const IG_ID = process.env.META_INSTAGRAM_ID;
 const FB_PAGE_ID = process.env.META_FACEBOOK_PAGE_ID;
@@ -120,17 +120,23 @@ async function fbStory(fileUrl: string, type: 'image' | 'video') {
 // -------------------------------------------------------------
 export async function POST(req: Request) {
   try {
-    const { fileUrl, fileType, caption, postIndex, targets } = await req.json();
+    const { fileUrl, fileType, caption, postIndex, targets, operatorName, roomName } = await req.json();
 
     if (!fileUrl || !fileType || !caption) {
-      return NextResponse.json({ error: 'Missing req parameters' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    const { data: post, error: dbError } = await fileSupabase.from('posts').insert({
+    // Capture branch info for history
+    const { data: roomData } = await supabase.from('rooms').select('branch').eq('name', roomName).single();
+
+    const { data: post, error: dbError } = await supabase.from('posts').insert({
       file_url: fileUrl,
       file_type: fileType,
       caption: caption,
       post_index: postIndex || 0,
+      operator_name: operatorName,
+      room_name: roomName,
+      branch_name: roomData?.branch || '',
       ig_feed_status: targets.includes('ig_feed') ? 'uploading' : 'skipped',
       ig_story_status: targets.includes('ig_story') ? 'uploading' : 'skipped',
       fb_feed_status: targets.includes('fb_feed') ? 'uploading' : 'skipped',
@@ -163,7 +169,7 @@ export async function POST(req: Request) {
       if (r.err) updatePayload.error_details[t] = r.err;
     });
 
-    await fileSupabase.from('posts').update(updatePayload).eq('id', post.id);
+    await supabase.from('posts').update(updatePayload).eq('id', post.id);
 
     return NextResponse.json({ success: true, postId: post.id, results: rawResults });
 

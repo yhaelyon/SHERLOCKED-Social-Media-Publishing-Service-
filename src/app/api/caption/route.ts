@@ -1,115 +1,91 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function getNextPostIndex(): Promise<number> {
-  const { data, error } = await supabase
-    .from('post_counter')
-    .select('total_count')
-    .eq('id', 1)
-    .single();
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || '';
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error fetching post_counter:', error);
-  }
-
-  const currentCount = data?.total_count || 0;
-  const newCount = currentCount + 1;
-  const postIndex = (newCount % 5) === 0 ? 5 : (newCount % 5);
-
-  const { error: updateError } = await supabase
-    .from('post_counter')
-    .upsert({ id: 1, total_count: newCount });
-
-  if (updateError) {
-    console.error('Error updating post_counter:', updateError);
-  }
-
-  return postIndex;
-}
-
-function buildCaptionPrompt(postIndex: number): string {
-  return `You are a marketing expert for an escape room business in Israel with 10 years of experience.
-
-Business name: Sherlocked
-Location: Rishon LeZion
-
-Write a short and catchy caption in Hebrew for Instagram and Facebook.
-
-Goals:
-- attract families with kids
-- attract birthday events
-- attract groups of friends
-
-Tone:
-exciting, fun, mysterious, energetic
-
-Input:
-post_index = ${postIndex}
-
-Instructions:
-- Hebrew only
-- 1 short sentence
-- Add emojis
-- Add 5 relevant hashtags in Hebrew
-
-Rules:
-If post_index = 5:
-- Add a strong call to action (הזמינו עכשיו / נשארו מקומות בודדים / מהרו להזמין)
-- Create urgency
-
-If post_index is 1–4:
-- DO NOT include any call to action
-- Focus on fun, excitement, success, and experience
-
-Output:
-Caption only`;
-}
-
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const postIndex = await getNextPostIndex();
+    const { roomName } = await req.json();
+
+    // 1. Fetch Room Specific Prompt and Global Prompt
+    const { data: roomData } = await supabase
+      .from('rooms')
+      .select('specific_prompt, branch')
+      .eq('name', roomName)
+      .single();
+    
+    const { data: systemData } = await supabase
+      .from('system_settings')
+      .select('general_prompt')
+      .eq('id', 'global')
+      .single();
+
+    const specificPrompt = roomData?.specific_prompt || '';
+    const generalPrompt = systemData?.general_prompt || '';
+    const branch = roomData?.branch || '';
+
+    // 2. Fetch Post Counter for cycling
+    const { data: counter, error: countErr } = await supabase
+      .from('post_counter')
+      .select('count')
+      .eq('id', 1)
+      .single();
+    
+    const nextCount = (counter?.count || 0) + 1;
+    await supabase.from('post_counter').update({ count: nextCount }).eq('id', 1);
+    
+    const index = (nextCount % 5) || 5; // 1-5 index
+
+    const systemMessage = `
+You are a social media expert for "Sherlocked" escape rooms. 
+Your task is to generate a viral, engaging caption in HEBREW for a photo/video of players who just finished an escape room.
+
+BRANCH: ${branch}
+ROOM: ${roomName}
+
+SPECIFIC ROOM DETAILS:
+${specificPrompt}
+
+GENERAL INFORMATION/EVENTS:
+${generalPrompt}
+
+CAPTURING STYLE:
+Post Variation #${index} (Make this unique compared to other variations).
+Use emojis, hashtags like #שרלוקד #חדרבריחה #Sherlocked.
+Keep it authentic, exciting, and encouraging others to book.
+The tone should be fun and slightly mysterious.
+Do NOT use placeholders like [Name]. Use general terms like "האלופים האלה" or "הקבוצה המטורפת הזאת".
+    `;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || ''}`,
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'HTTP-Referer': 'https://sherlocked.co.il',
-        'X-Title': 'Sherlocked Hub'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-3.5-sonnet',
-        messages: [{
-          role: 'user',
-          content: buildCaptionPrompt(postIndex)
-        }]
-      })
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: 'צור כיתוב קצר וקולע לפוסט באינסטגרם ובפייסבוק עבור הקבוצה שבתמונה.' }
+        ],
+        temperature: 0.8,
+        max_tokens: 300,
+      }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenRouter API error:', errorData);
-      return NextResponse.json({ error: 'Failed to generate caption with AI', details: errorData }, { status: 500 });
-    }
 
     const data = await response.json();
-    const caption = data.choices?.[0]?.message?.content?.trim();
+    const caption = data.choices[0].message.content;
 
-    if (!caption) {
-      return NextResponse.json({ error: 'AI returned an empty caption' }, { status: 500 });
-    }
+    return NextResponse.json({ caption, postIndex: index });
 
-    return NextResponse.json({
-      caption,
-      postIndex
-    });
-
-  } catch (error: any) {
-    console.error('Caption generation error:', error);
-    return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 });
+  } catch (err: any) {
+    console.error('Caption Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
