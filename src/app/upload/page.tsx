@@ -301,7 +301,7 @@ export default function UploadPage() {
                   <span className={`font-bold ${item.status === 'pending' ? 'text-secondary' : 'text-primary'}`}>{item.label}</span>
                 </div>
                 {item.status === 'loading' && <Loader2 className="w-6 h-6 text-teal animate-spin" />}
-                {item.status === 'done' && <CheckCircle className="w-6 h-6 text-green-500 animate-in zoom-in" />}
+                {item.status === 'done' && <CheckCircle className="w-6 h-6 text-teal animate-in zoom-in" />}
               </div>
             ))}
           </div>
@@ -314,8 +314,8 @@ export default function UploadPage() {
       {step === 'DONE' && publishResults && (
         <div className="flex-1 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-500 max-w-2xl mx-auto w-full pb-12">
           <div className="bg-elevated rounded-3xl border border-border-subtle p-10 text-center shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal via-green-500 to-teal"></div>
-            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal via-teal/50 to-teal"></div>
+            <div className="w-20 h-20 bg-teal/20 text-teal rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
               <CheckCircle className="w-10 h-10" />
             </div>
             <h3 className="text-3xl font-black text-primary mb-3">מעולה! הכל פורסם</h3>
@@ -333,7 +333,7 @@ export default function UploadPage() {
               {generatedCaption}
             </div>
 
-            <div className="p-6 grid grid-cols-2 gap-4">
+            <div className="p-6 grid grid-cols-1 gap-4">
               {[
                 { label: 'Instagram Feed', success: publishResults.igFeed === true, error: typeof publishResults.igFeed === 'string' ? publishResults.igFeed : null },
                 { label: 'Instagram Story', success: publishResults.igStory === true, error: typeof publishResults.igStory === 'string' ? publishResults.igStory : null },
@@ -343,7 +343,7 @@ export default function UploadPage() {
                 <div key={i} className="flex items-center justify-between bg-base/30 p-4 rounded-xl border border-border-subtle/50">
                   <span className="text-sm font-bold text-secondary">{item.label}</span>
                   {item.success ? (
-                    <span className="flex items-center gap-2 text-[10px] font-black text-green-500 bg-green-500/10 px-3 py-1.5 rounded-lg uppercase tracking-wider">
+                    <span className="flex items-center gap-2 text-[10px] font-black text-teal bg-teal/10 px-3 py-1.5 rounded-lg uppercase tracking-wider">
                       <CheckCircle className="w-4 h-4" /> תקין
                     </span>
                   ) : (

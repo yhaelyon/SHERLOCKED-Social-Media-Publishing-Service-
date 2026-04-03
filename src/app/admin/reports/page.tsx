@@ -70,28 +70,28 @@ export default function AdminReportsPage() {
           <p className="text-secondary mt-1">צפה בביצועי המפעילים וייצא דוחות לתשלום</p>
         </div>
         
-        <div className="flex items-center gap-3">
-            <div className="relative">
+        <div className="flex flex-col gap-4 w-full">
+            <div className="relative w-full">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal" />
                 <input 
                     type="month" 
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="bg-elevated border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-primary font-bold focus:ring-2 focus:ring-teal/50 outline-none transition-all"
+                    className="bg-elevated border border-border-subtle rounded-xl pl-10 pr-4 py-3 text-primary font-bold focus:ring-2 focus:ring-teal/50 outline-none transition-all w-full"
                 />
             </div>
             <button 
               onClick={downloadCSV}
               disabled={reportData.length === 0}
-              className="bg-teal text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-teal/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+              className="bg-teal text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-teal/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 w-full"
             >
               <Download className="w-5 h-5" />
-              ייצא CSV
+              ייצא CSV לתשלום
             </button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-elevated border border-border-subtle p-6 rounded-3xl shadow-xl border-b-4 border-b-teal">
             <div className="flex items-center gap-4 mb-2">
                 <div className="bg-teal/10 p-3 rounded-2xl text-teal"><TrendingUp className="w-6 h-6" /></div>
@@ -127,7 +127,7 @@ export default function AdminReportsPage() {
         <div className="flex flex-col">
            {reportData.length === 0 ? (
                <div className="p-20 text-center flex flex-col items-center gap-4">
-                   <div className="w-16 h-16 bg-base rounded-full flex items-center justify-center border border-border-subtle">
+                   <div className="w-20 h-20 bg-teal/20 text-teal rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
                        <Calendar className="w-8 h-8 text-secondary opacity-20" />
                    </div>
                    <p className="text-secondary font-bold">אין נתונים לחודש שנבחר</p>
@@ -155,7 +155,7 @@ export default function AdminReportsPage() {
                          <p className="text-[10px] font-black text-secondary tracking-widest mb-1 opacity-50">PERFORMANCE</p>
                          <div className="flex items-baseline gap-1">
                              <span className="font-black text-primary text-2xl">+{data.count}</span>
-                             <CheckCircle2 className="w-4 h-4 text-green-500" />
+                             <CheckCircle2 className="w-4 h-4 text-teal" />
                          </div>
                       </div>
                       <ChevronRight className="w-6 h-6 text-border-subtle group-hover:text-teal group-hover:translate-x-1 transition-all" />

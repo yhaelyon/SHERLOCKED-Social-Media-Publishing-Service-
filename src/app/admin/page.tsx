@@ -8,18 +8,18 @@ export default function AdminPage() {
         <p className="text-secondary mt-1">פאנל שליטה למנהלים - שרלוקד סושיאל</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Operator Management */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Management & AI Settings */}
         <a href="/admin/settings" className="bg-elevated hover:bg-teal/5 hover:border-teal/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
             <div className="w-12 h-12 bg-teal/10 rounded-2xl flex items-center justify-center text-teal group-hover:scale-110 transition-transform">
-                <UserPlus className="w-6 h-6" />
+                <Sparkles className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-primary">ניהול מפעילים</h3>
+                <h3 className="text-xl font-black text-primary">הגדרות עובדים וחדרים</h3>
                 <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-teal group-hover:translate-x-[-4px] transition-all" />
               </div>
-              <p className="text-secondary text-sm mt-2 leading-relaxed">הוספה ועדכון שמות העובדים במערכת, וניהול הרשאות בסיסיות.</p>
+              <p className="text-secondary text-sm mt-2 leading-relaxed">ניהול מפעילים, הרשאות, ופרומפטים ייחודיים לחדרי הבריחה.</p>
             </div>
         </a>
 
@@ -34,20 +34,6 @@ export default function AdminPage() {
                 <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-blue-500 group-hover:translate-x-[-4px] transition-all" />
               </div>
               <p className="text-secondary text-sm mt-2 leading-relaxed">סיכום פעילות חודשית לפי מפעיל וייצא דוחות CSV לתשלום בונוסים.</p>
-            </div>
-        </a>
-
-        {/* AI Room Prompts */}
-        <a href="/admin/settings" className="bg-elevated hover:bg-orange-500/5 hover:border-orange-500/50 transition-all border border-border-subtle rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer shadow-xl shadow-black/5">
-            <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-primary">הגדרות AI וחדרים</h3>
-                <ChevronLeft className="w-5 h-5 text-secondary group-hover:text-orange-500 group-hover:translate-x-[-4px] transition-all" />
-              </div>
-              <p className="text-secondary text-sm mt-2 leading-relaxed">עדכון פרומפטים ייחודיים לכל חדר קווסט ליצירת כיתובים מדויקים.</p>
             </div>
         </a>
 

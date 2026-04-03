@@ -63,16 +63,16 @@ export default function AdminSocialPage() {
       </header>
 
       {testResult && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${testResult.success ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+        <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${testResult.success ? 'bg-teal/10 text-teal border border-teal/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
           {testResult.success ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <p className="text-sm font-bold">{testResult.message}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Instagram Card */}
         <div className="bg-elevated rounded-3xl border border-border-subtle p-6 shadow-xl relative overflow-hidden group">
-          <div className={`absolute top-0 right-0 w-1 h-full ${isIgConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className={`absolute top-0 right-0 w-1 h-full ${isIgConnected ? 'bg-teal' : 'bg-red-500'}`} />
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-[#E1306C]/10 text-[#E1306C] rounded-2xl">
@@ -81,7 +81,7 @@ export default function AdminSocialPage() {
               <p className="text-xl font-black text-primary">Instagram</p>
             </div>
             {isIgConnected ? (
-              <span className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">CONNECTED</span>
+              <span className="bg-teal/10 text-teal px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">CONNECTED</span>
             ) : (
               <span className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">DISCONNECTED</span>
             )}

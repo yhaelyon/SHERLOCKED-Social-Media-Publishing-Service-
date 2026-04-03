@@ -41,8 +41,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const { origin } = new URL(req.url);
-  const response = NextResponse.redirect(new URL('/login', origin));
+  const response = NextResponse.redirect(new URL('/login', req.url));
   response.cookies.delete('auth_session');
   return response;
 }

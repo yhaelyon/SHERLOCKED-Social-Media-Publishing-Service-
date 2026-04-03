@@ -94,10 +94,10 @@ export default function AdminSettingsPage() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="flex flex-col gap-8">
         
-        {/* LEFT COLUMN: GENERAL SETTINGS & OPERATORS */}
-        <div className="lg:col-span-5 flex flex-col gap-8">
+        {/* TOP SECTION: GENERAL SETTINGS & OPERATORS */}
+        <div className="flex flex-col gap-8">
           
           {/* Section: Global Prompt */}
           <section className="bg-elevated rounded-3xl p-6 border border-border-subtle shadow-xl">
@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
                                 onClick={() => toggleOperatorStatus(op.id, op.is_active)}
                                 className={`text-xs px-2.5 py-1.5 rounded-lg font-bold transition-all ${op.is_active ? 'bg-red-500/10 text-red-500 hover:bg-red-500' : 'bg-green-500/10 text-green-500 hover:bg-green-500'} hover:text-white`}
                             >
-                                {op.is_active ? 'השבת' : 'שחזר'}
+                                {op.is_active ? 'מחק' : 'שחזר'}
                             </button>
                         </div>
                     </div>
@@ -167,8 +167,8 @@ export default function AdminSettingsPage() {
 
         </div>
 
-        {/* RIGHT COLUMN: ROOMS AND PROMPTS */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        {/* BOTTOM SECTION: ROOMS AND PROMPTS */}
+        <div className="flex flex-col gap-6">
            <section className="bg-elevated rounded-3xl border border-border-subtle shadow-xl overflow-hidden">
              <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-surface">
                 <h3 className="text-xl font-black text-primary flex items-center gap-2">
