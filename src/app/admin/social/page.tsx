@@ -34,7 +34,13 @@ export default function AdminSocialPage() {
         const res = await fetch('/api/meta/verify');
         const json = await res.json();
         if (json.success) {
-            setTestResult({ success: true, message: `החיבור תקין! הטוקן יפוג בעוד ${Math.floor((json.expires_at - Date.now()/1000)/86400)} ימים.` });
+            let expiresMessage = '';
+            if (json.expires_at === 0) {
+                expiresMessage = 'החיבור תקין! הטוקן נצחי ולעולם לא יפוג ♾️';
+            } else {
+                expiresMessage = `החיבור תקין! הטוקן יפוג בעוד ${Math.floor((json.expires_at - Date.now()/1000)/86400)} ימים.`;
+            }
+            setTestResult({ success: true, message: expiresMessage });
         } else {
             setTestResult({ success: false, message: `שגיאת חיבור: ${json.error}` });
         }
@@ -144,10 +150,11 @@ export default function AdminSocialPage() {
         </button>
 
         <button 
-           className="bg-white/5 hover:bg-primary hover:text-base border border-border-subtle hover:border-primary rounded-2xl py-6 transition-all shadow-xl font-black text-lg flex items-center justify-center gap-3"
+           className="bg-white/5 hover:bg-primary hover:text-base border border-border-subtle hover:border-primary rounded-2xl py-6 transition-all shadow-xl font-black text-lg flex items-center justify-center gap-3 opacity-50 cursor-not-allowed"
+           disabled
         >
           <RefreshCcw className="w-6 h-6" />
-          רענון טוקן (חידוש ל-60 יום)
+          חידוש טוקן לא נדרש
         </button>
       </div>
 
@@ -171,7 +178,7 @@ export default function AdminSocialPage() {
             </div>
             <div className="bg-base/40 border border-border-subtle p-5 rounded-2xl">
                <p className="text-secondary text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">תוקף טוקן</p>
-               <p className="text-3xl font-black text-orange-500">{data?.expires_days || 0}d</p>
+               <p className="text-3xl font-black text-teal">{data?.expires_days === 9999 ? '∞' : `${data?.expires_days || 0}d`}</p>
             </div>
           </div>
       </div>

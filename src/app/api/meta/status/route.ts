@@ -27,10 +27,16 @@ export async function GET() {
     if (token) {
       const debugRes = await fetch(`https://graph.facebook.com/debug_token?input_token=${token}&access_token=${token}`);
       const debugData = await debugRes.json();
-      const expiresAt = debugData?.data?.expires_at ? new Date(debugData.data.expires_at * 1000) : null;
-      if (expiresAt) {
-          expiresAtStr = expiresAt.toLocaleDateString();
-          expiresDays = Math.floor((expiresAt.getTime() - Date.now()) / 86400000);
+      const isNeverExpiring = debugData?.data?.expires_at === 0;
+      if (isNeverExpiring) {
+          expiresAtStr = 'Never';
+          expiresDays = 9999;
+      } else {
+          const expiresAt = debugData?.data?.expires_at ? new Date(debugData.data.expires_at * 1000) : null;
+          if (expiresAt) {
+              expiresAtStr = expiresAt.toLocaleDateString();
+              expiresDays = Math.floor((expiresAt.getTime() - Date.now()) / 86400000);
+          }
       }
     }
   } catch (err) {}
