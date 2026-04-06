@@ -139,7 +139,7 @@ export default function UploadPage() {
           fileType: fileData!.type,
           caption: generatedCaption,
           postIndex: postIndex,
-          targets: ['fb_feed', 'fb_story', 'ig_feed', 'ig_story'],
+          targets: ['ig_story'],
           operatorName: selectedOperator,
           roomName: selectedRoom
         })
@@ -178,7 +178,7 @@ export default function UploadPage() {
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-primary">העלאת תוכן חדש</h2>
-          <p className="text-secondary text-sm mt-1">בחר קבצים להעלאה ולפרסום ברשתות</p>
+          <p className="text-secondary text-sm mt-1">בחר קבצים להעלאה לסטורי באינסטגרם (משותף אוטומטית לפייסבוק)</p>
         </div>
       </header>
 
@@ -383,7 +383,7 @@ export default function UploadPage() {
             {[
               { id: 'storage', label: 'שומר במאגר היסטוריה', icon: '💾', status: 'done' },
               { id: 'caption', label: 'יוצר כיתוב עם בינה מלאכותית', icon: '✍️', status: pubStatus.caption },
-              { id: 'publish', label: 'שולח לפייסבוק ואינסטגרם', icon: '📱', status: pubStatus.publish },
+              { id: 'publish', label: 'שולח לסטורי (אינסטגרם + פייסבוק)', icon: '📱', status: pubStatus.publish },
             ].map((item) => (
               <div key={item.id} className={`flex items-center justify-between bg-surface p-5 rounded-2xl border ${item.status === 'pending' ? 'border-border-subtle opacity-40' : 'border-teal/30 shadow-lg shadow-teal/5 transition-all animate-in slide-in-from-left-4'}`}>
                 <div className="flex items-center gap-4">
@@ -409,7 +409,7 @@ export default function UploadPage() {
               <CheckCircle className="w-10 h-10" />
             </div>
             <h3 className="text-3xl font-black text-primary mb-3">מעולה! הכל פורסם</h3>
-            <p className="text-secondary font-medium">התוכן שלך מופיע עכשיו ברשתות החברתיות של שרלוקד.</p>
+            <p className="text-secondary font-medium">הסטורי עלה לאינסטגרם ומשותף אוטומטית לפייסבוק (כולל הכיתוב).</p>
           </div>
 
           <div className="bg-surface rounded-3xl border border-border-subtle overflow-hidden shadow-xl">
@@ -425,10 +425,7 @@ export default function UploadPage() {
 
             <div className="p-6 grid grid-cols-1 gap-4">
               {[
-                { label: 'Instagram Feed', success: publishResults.igFeed === true, error: typeof publishResults.igFeed === 'string' ? publishResults.igFeed : null },
                 { label: 'Instagram Story', success: publishResults.igStory === true, error: typeof publishResults.igStory === 'string' ? publishResults.igStory : null },
-                { label: 'Facebook Feed', success: publishResults.fbFeed === true, error: typeof publishResults.fbFeed === 'string' ? publishResults.fbFeed : null },
-                { label: 'Facebook Story', success: publishResults.fbStory === true, error: typeof publishResults.fbStory === 'string' ? publishResults.fbStory : null },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between bg-base/30 p-4 rounded-xl border border-border-subtle/50">
                   <span className="text-sm font-bold text-secondary">{item.label}</span>

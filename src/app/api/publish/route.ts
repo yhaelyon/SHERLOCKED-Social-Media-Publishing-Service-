@@ -48,8 +48,24 @@ async function igFeed(fileUrl: string, caption: string, type: 'image' | 'video')
   return pubData.id;
 }
 
-async function igStory(fileUrl: string, type: 'image' | 'video') {
-  const body: any = { media_type: 'STORIES', access_token: TOKEN };
+async function igStory(fileUrl: string, caption: string, type: 'image' | 'video') {
+  const stickers = [
+    {
+      sticker_type: 'TEXT',
+      x: 0.5,
+      y: 0.85, // Position near the bottom
+      text: caption,
+      font_size: 0.08,
+      text_color: '#ffffff'
+    }
+  ];
+
+  const body: any = { 
+    media_type: 'STORIES', 
+    access_token: TOKEN,
+    stickers: JSON.stringify(stickers)
+  };
+  
   if (type === 'image') body.image_url = fileUrl;
   else body.video_url = fileUrl;
 
@@ -87,14 +103,17 @@ async function fbFeed(fileUrl: string, caption: string, type: 'image' | 'video')
   return data.id || data.post_id;
 }
 
-async function fbStory(fileUrl: string, type: 'image' | 'video') {
+async function fbStory(fileUrl: string, caption: string, type: 'image' | 'video') {
   const isImage = type === 'image';
   
   // 1. Upload media as unpublished
+  // Note: Facebook Page Stories API currently does not support text stickers or captions directly.
+  // We upload with message anyway in case they add support or for internal tracking.
   const upRes = await fetch(`${GRAPH_URL}/${FB_PAGE_ID}/${isImage ? 'photos' : 'videos'}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       [isImage ? 'url' : 'file_url']: fileUrl,
+      [isImage ? 'message' : 'description']: caption,
       published: false,
       access_token: TOKEN
     })
@@ -150,9 +169,9 @@ export async function POST(req: Request) {
 
     const promises = [];
     if (targets.includes('ig_feed')) promises.push(igFeed(fileUrl, caption, fileType).then(id => ({ t: 'ig_feed', id })).catch(e => ({ t: 'ig_feed', err: String(e) })));
-    if (targets.includes('ig_story')) promises.push(igStory(fileUrl, fileType).then(id => ({ t: 'ig_story', id })).catch(e => ({ t: 'ig_story', err: String(e) })));
+    if (targets.includes('ig_story')) promises.push(igStory(fileUrl, caption, fileType).then(id => ({ t: 'ig_story', id })).catch(e => ({ t: 'ig_story', err: String(e) })));
     if (targets.includes('fb_feed')) promises.push(fbFeed(fileUrl, caption, fileType).then(id => ({ t: 'fb_feed', id })).catch(e => ({ t: 'fb_feed', err: String(e) })));
-    if (targets.includes('fb_story')) promises.push(fbStory(fileUrl, fileType).then(id => ({ t: 'fb_story', id })).catch(e => ({ t: 'fb_story', err: String(e) })));
+    if (targets.includes('fb_story')) promises.push(fbStory(fileUrl, caption, fileType).then(id => ({ t: 'fb_story', id })).catch(e => ({ t: 'fb_story', err: String(e) })));
 
     const rawResults = await Promise.all(promises);
     
