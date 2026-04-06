@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Image as ImageIcon, Video as VideoIcon, UploadCloud, XCircle, CheckCircle, Loader2, RefreshCw, User, DoorOpen } from 'lucide-react';
 
-type Step = 'UPLOAD' | 'PUBLISHING' | 'DONE';
+type Step = 'UPLOAD' | 'PREVIEW' | 'PUBLISHING' | 'DONE';
 
 interface PublishResult {
   igFeed: boolean | string;
@@ -22,6 +22,7 @@ export default function UploadPage() {
   // Selection State
   const [selectedOperator, setSelectedOperator] = useState('');
   const [selectedRoom, setSelectedRoom] = useState('');
+  const [userRole, setUserRole] = useState<'manager' | 'operator' | ''>('');
   
   // File State
   const [isDragging, setIsDragging] = useState(false);
@@ -35,6 +36,8 @@ export default function UploadPage() {
     publish: 'pending', 
   });
   const [generatedCaption, setGeneratedCaption] = useState<string>('');
+  const [postIndex, setPostIndex] = useState<number>(1);
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   const [publishResults, setPublishResults] = useState<PublishResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +49,22 @@ export default function UploadPage() {
         setOperators(data.operators);
         setRooms(data.rooms);
       });
+
+    // Get user role from cookie
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        try {
+          const cookieVal = parts.pop()?.split(';').shift();
+          const decoded = decodeURIComponent(cookieVal || '');
+          const session = JSON.parse(decoded);
+          return session.role;
+        } catch (e) { return ''; }
+      }
+      return '';
+    };
+    setUserRole(getCookie('auth_session'));
   }, []);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
@@ -81,10 +100,9 @@ export default function UploadPage() {
       setUploadError('אנא בחר מפעיל וחדר לפני הפרסום.');
       return;
     }
-    setStep('PUBLISHING');
+    setIsGeneratingCaption(true);
+    setStep('PREVIEW');
     
-    // Step 1: Generate AI Caption
-    setPubStatus(s => ({ ...s, caption: 'loading' }));
     let finalCaption = '';
     let currPostIndex = 1;
     
@@ -103,6 +121,12 @@ export default function UploadPage() {
       finalCaption = `איזה כיף בחדר ${selectedRoom}! האלופים שלנו פיצחו את הכל! 🕵️‍♂️🔐 #שרלוקד #חדרבריחה`;
     }
     setGeneratedCaption(finalCaption);
+    setPostIndex(currPostIndex);
+    setIsGeneratingCaption(false);
+  };
+
+  const handleFinalPublish = async () => {
+    setStep('PUBLISHING');
     setPubStatus(s => ({ ...s, caption: 'done', publish: 'loading' }));
 
     // Step 2: Publish to Social
@@ -111,10 +135,10 @@ export default function UploadPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileUrl: fileData.url,
-          fileType: fileData.type,
-          caption: finalCaption,
-          postIndex: currPostIndex,
+          fileUrl: fileData!.url,
+          fileType: fileData!.type,
+          caption: generatedCaption,
+          postIndex: postIndex,
           targets: ['fb_feed', 'fb_story', 'ig_feed', 'ig_story'],
           operatorName: selectedOperator,
           roomName: selectedRoom
@@ -269,11 +293,77 @@ export default function UploadPage() {
                 onClick={handlePublishNow}
                 className="bg-teal hover:bg-teal/90 text-white font-black text-xl py-5 rounded-2xl transition-all shadow-xl shadow-teal/30 w-full flex items-center justify-center gap-3 active:scale-[0.98]"
               >
-                <span>🚀</span>
-                <span>שלח לפרסום עכשיו</span>
+                <span>✨</span>
+                <span>צור כיתוב וצפה בתצוגה מקדימה</span>
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* SCREEN 2: PREVIEW */}
+      {step === 'PREVIEW' && (
+        <div className="flex flex-col gap-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-elevated rounded-3xl border border-border-subtle overflow-hidden shadow-2xl">
+            <div className="aspect-[4/5] bg-base w-full">
+              {fileData?.type === 'image' ? (
+                <img src={fileData.url} alt="Preview" className="object-cover w-full h-full" />
+              ) : (
+                <video src={fileData?.url} controls className="w-full h-full object-cover" />
+              )}
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-black text-teal bg-teal/10 px-3 py-1 rounded-full uppercase">AI Preview</span>
+                {userRole === 'manager' && (
+                  <span className="text-xs font-bold text-secondary italic">ניתן לערוך את הטקסט</span>
+                )}
+              </div>
+
+              {isGeneratingCaption ? (
+                <div className="flex flex-col items-center py-12 gap-4">
+                  <Loader2 className="w-8 h-8 text-teal animate-spin" />
+                  <p className="text-primary font-bold">הבינה המלאכותית מכינה כיתוב...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {userRole === 'manager' ? (
+                    <textarea 
+                      value={generatedCaption}
+                      onChange={(e) => setGeneratedCaption(e.target.value)}
+                      dir="rtl"
+                      className="w-full bg-base border border-border-subtle rounded-xl p-4 text-primary font-medium min-h-[150px] focus:outline-none focus:ring-2 focus:ring-teal/30 text-right leading-relaxed"
+                      placeholder="הזן כיתוב לפוסט..."
+                    />
+                  ) : (
+                    <div dir="rtl" className="bg-base/50 p-5 rounded-xl border border-border-subtle text-primary text-right font-medium leading-relaxed whitespace-pre-wrap">
+                      {generatedCaption}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {!isGeneratingCaption && (
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleFinalPublish}
+                className="bg-teal hover:bg-teal/90 text-white font-black text-xl py-5 rounded-2xl transition-all shadow-xl shadow-teal/30 w-full flex items-center justify-center gap-3 active:scale-[0.98]"
+              >
+                <span>🚀</span>
+                <span>אשר ופרסם עכשיו</span>
+              </button>
+              <button 
+                onClick={resetFlow}
+                className="bg-white/5 hover:bg-red-500 hover:text-white border border-border-subtle rounded-2xl py-4 font-bold text-primary transition-all flex items-center justify-center gap-2"
+              >
+                <XCircle className="w-5 h-5" />
+                בטל וחזור
+              </button>
+            </div>
+          )}
         </div>
       )}
 
