@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
-import TextToSVG from 'text-to-svg';
 import path from 'path';
 
-let textToSVG: any = null;
+// Removed unused text-to-svg logic for native sharp text rendering
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -40,65 +39,59 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const width = metadata.width || 1080;
     const height = metadata.height || 1920;
 
-    // 3. Initialize text-to-svg if needed
-    if (!textToSVG) {
-      const fontPath = path.join(process.cwd(), 'src/assets/fonts/Assistant.ttf');
-      textToSVG = TextToSVG.loadSync(fontPath);
-    }
-
-    // 4. Prepare text overlay
-    // We calculate font size based on image width
-    const fontSize = Math.max(Math.floor(width * 0.04), 28);
+    // 3. Prepare text overlay
     const padding = 50;
-    const rectY = Math.floor(height * 0.72); 
-    
-    // Split text into lines if it's long
-    // STICKY: We strip emojis from the *processed image text bundle* 
-    // to avoid the broken box symbol in the photo itself.
-    const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
-    
-    const words = cleanText.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-    
-    words.forEach(word => {
-      if ((currentLine + ' ' + word).length > 35) {
-        lines.push(currentLine.trim());
-        currentLine = word;
-      } else {
-        currentLine += ' ' + word;
+    const rectY = Math.floor(height * 0.78);
+    const textAreaWidth = Math.floor(width * 0.85);
+
+    // Render the text using sharp's native text operation (handles RTL/Emoji)
+    const textLayer = await sharp({
+      text: {
+        text: `<span foreground="white">${text}</span>`,
+        font: 'Assistant, "Noto Color Emoji", "Apple Color Emoji", sans-serif',
+        rgba: true,
+        width: textAreaWidth,
+        align: 'center',
       }
-    });
-    if (currentLine) lines.push(currentLine.trim());
+    })
+    .png()
+    .toBuffer();
 
-    const rectHeight = (lines.length * fontSize * 1.5) + 40;
-    
-    // Generate text paths
-    const textPaths = lines.map((line, i) => {
-      // Basic Hebrew reversing for libraries that don't supporting RTL shaping
-      // text-to-svg needs the string reversed if it doesn't handle RTL
-      const reversedLine = line.split('').reverse().join('');
-      
-      const options = {
-        x: width / 2,
-        y: rectY + (i + 1) * fontSize * 1.3,
-        fontSize: fontSize,
-        anchor: 'center top',
-        attributes: { fill: 'white' }
-      };
-      return textToSVG.getPath(reversedLine, options);
-    }).join('');
+    const textMeta = await sharp(textLayer).metadata();
+    const textW = textMeta.width || 0;
+    const textH = textMeta.height || 0;
 
-    const svgOverlay = `
-      <svg width="${width}" height="${height}">
-        <rect x="${padding}" y="${rectY}" width="${width - padding * 2}" height="${rectHeight}" rx="20" fill="rgba(0,0,0,0.7)" />
-        ${textPaths}
-      </svg>
-    `;
+    const rectPaddingX = 60;
+    const rectPaddingY = 40;
+    const rectWidth = textW + rectPaddingX;
+    const rectHeight = textH + rectPaddingY;
+
+    // Generate Background Box
+    const bgBox = await sharp({
+      create: {
+        width: rectWidth,
+        height: rectHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0.5 }
+      }
+    })
+    .png()
+    .toBuffer();
 
     const outputBuffer = await sharp(inputBuffer)
-      .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
-      .jpeg({ quality: 90 })
+      .composite([
+        { 
+          input: bgBox, 
+          top: rectY - (rectPaddingY / 2), 
+          left: Math.floor((width - rectWidth) / 2) 
+        },
+        { 
+          input: textLayer, 
+          top: rectY, 
+          left: Math.floor((width - textW) / 2) 
+        }
+      ])
+      .jpeg({ quality: 95 })
       .toBuffer();
 
     // 4. Upload back to Supabase
