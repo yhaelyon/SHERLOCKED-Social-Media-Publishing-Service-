@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import sharp from 'sharp';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -21,6 +22,95 @@ async function pollUntilReady(containerId: string, maxAttempts = 15, intervalMs 
     if (data.status_code === 'ERROR') throw new Error(data.error?.message || 'Instagram processing failed');
   }
   throw new Error('Instagram polling timeout exceeded');
+}
+
+async function processImageWithText(imageUrl: string, text: string): Promise<string> {
+  try {
+    // 1. Download image
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    // 2. Get image dimensions
+    const metadata = await sharp(inputBuffer).metadata();
+    const width = metadata.width || 1080;
+    const height = metadata.height || 1920;
+
+    // 3. Prepare text overlay
+    // We use a simple SVG overlay. Hebrew text is best handled by ensuring RTL direction.
+    // We create a semi-transparent background for readability.
+    const fontSize = Math.max(Math.floor(width * 0.04), 24);
+    const padding = 40;
+    const rectHeight = fontSize * 2.5;
+    const rectY = Math.floor(height * 0.75); // Position at 75% height to avoid UI overlaps
+
+    // Basic Hebrew RTL handling: we split lines if text is too long
+    const words = text.split(' ');
+    let line1 = '', line2 = '';
+    const mid = Math.ceil(words.length / 2);
+    line1 = words.slice(0, mid).join(' ');
+    line2 = words.slice(mid).join(' ');
+
+    const svgOverlay = `
+      <svg width="${width}" height="${height}">
+        <defs>
+          <filter id="shadow" x="0" y="0" width="200%" height="200%">
+            <feOffset result="offOut" in="SourceAlpha" dx="2" dy="2" />
+            <feGaussianBlur result="blurOut" in="offOut" stdDeviation="3" />
+            <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+          </filter>
+        </defs>
+        <rect x="${padding}" y="${rectY}" width="${width - padding * 2}" height="${rectHeight}" rx="15" fill="rgba(0,0,0,0.6)" />
+        <text 
+          x="${width / 2}" 
+          y="${rectY + rectHeight / 2 + (line2 ? -fontSize / 2 : fontSize / 3)}" 
+          font-family="Arial, Helvetica, sans-serif" 
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          fill="white" 
+          text-anchor="middle" 
+          direction="rtl"
+        >
+          ${line1}
+        </text>
+        ${line2 ? `
+        <text 
+          x="${width / 2}" 
+          y="${rectY + rectHeight / 2 + fontSize}" 
+          font-family="Arial, Helvetica, sans-serif" 
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          fill="white" 
+          text-anchor="middle" 
+          direction="rtl"
+        >
+          ${line2}
+        </text>` : ''}
+      </svg>
+    `;
+
+    const outputBuffer = await sharp(inputBuffer)
+      .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // 4. Upload back to Supabase
+    const filename = `processed/${Date.now()}.jpg`;
+    const { data, error } = await supabase.storage
+      .from('social-posts')
+      .upload(filename, outputBuffer, { contentType: 'image/jpeg' });
+
+    if (error) throw error;
+    
+    const { data: publicUrlData } = supabase.storage
+      .from('social-posts')
+      .getPublicUrl(data.path);
+
+    return publicUrlData.publicUrl;
+  } catch (err) {
+    console.error('Image processing failed, falling back to original:', err);
+    return imageUrl;
+  }
 }
 
 // -------------------------------------------------------------
@@ -49,25 +139,18 @@ async function igFeed(fileUrl: string, caption: string, type: 'image' | 'video')
 }
 
 async function igStory(fileUrl: string, caption: string, type: 'image' | 'video') {
-  const stickers = [
-    {
-      sticker_type: 'TEXT',
-      x: 0.5,
-      y: 0.85, // Position near the bottom
-      text: caption,
-      font_size: 0.08,
-      text_color: '#ffffff'
-    }
-  ];
-
   const body: any = { 
     media_type: 'STORIES', 
-    access_token: TOKEN,
-    stickers: JSON.stringify(stickers)
+    access_token: TOKEN
   };
   
-  if (type === 'image') body.image_url = fileUrl;
-  else body.video_url = fileUrl;
+  let finalUrl = fileUrl;
+  if (type === 'image') {
+    finalUrl = await processImageWithText(fileUrl, caption);
+    body.image_url = finalUrl;
+  } else {
+    body.video_url = fileUrl;
+  }
 
   const res = await fetch(`${GRAPH_URL}/${IG_ID}/media`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
