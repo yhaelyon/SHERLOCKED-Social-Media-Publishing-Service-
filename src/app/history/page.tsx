@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Calendar, Image as ImageIcon, Video, CheckCircle2, XCircle, AlertCircle, User, DoorOpen, MapPin, Loader2 } from 'lucide-react';
 
@@ -64,7 +65,14 @@ export default async function HistoryPage() {
                     <div className="flex items-center gap-3">
                         <span className="text-xs font-black text-secondary flex items-center gap-1.5 bg-base px-3 py-1.5 rounded-lg border border-border-subtle/50">
                           <Calendar className="w-3.5 h-3.5 text-teal" />
-                          {new Date(post.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(post.created_at).toLocaleDateString('he-IL', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            timeZone: 'Asia/Jerusalem' 
+                          })}
                         </span>
                         {post.operator_name && (
                            <span className="text-xs font-black text-teal flex items-center gap-1.5 bg-teal/5 px-3 py-1.5 rounded-lg border border-teal/10">
