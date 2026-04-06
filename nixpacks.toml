@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "fonts-noto-color-emoji", "fontconfig"]
+nixPkgs = ["...", "fonts-noto-color-emoji", "fontconfig"]
 
 [phases.build]
 cmds = [
