@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Video as VideoIcon, UploadCloud, XCircle, CheckCircle, Loader2, RefreshCw, User, DoorOpen } from 'lucide-react';
+import { Image as ImageIcon, Video as VideoIcon, UploadCloud, XCircle, CheckCircle, Loader2, RefreshCw, User, DoorOpen, Edit3 } from 'lucide-react';
 
 type Step = 'UPLOAD' | 'PREVIEW' | 'PUBLISHING' | 'DONE';
 
@@ -305,11 +305,20 @@ export default function UploadPage() {
       {step === 'PREVIEW' && (
         <div className="flex flex-col gap-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-elevated rounded-3xl border border-border-subtle overflow-hidden shadow-2xl">
-            <div className="aspect-[4/5] bg-base w-full">
+            <div className="relative aspect-[4/5] bg-base w-full overflow-hidden">
               {fileData?.type === 'image' ? (
                 <img src={fileData.url} alt="Preview" className="object-cover w-full h-full" />
               ) : (
                 <video src={fileData?.url} controls className="w-full h-full object-cover" />
+              )}
+              
+              {/* VIRTUAL STORY OVERLAY */}
+              {!isGeneratingCaption && generatedCaption && (
+                <div className="absolute inset-x-0 bottom-[15%] px-4 flex justify-center pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-3xl text-center font-bold text-[min(3.5vw,16px)] max-w-[90%] break-words whitespace-pre-wrap shadow-2xl border border-white/10 select-none leading-tight" dir="rtl">
+                    {generatedCaption}
+                  </div>
+                </div>
               )}
             </div>
             
@@ -328,19 +337,18 @@ export default function UploadPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {userRole === 'manager' ? (
+                  <div className="relative group">
                     <textarea 
                       value={generatedCaption}
                       onChange={(e) => setGeneratedCaption(e.target.value)}
                       dir="rtl"
-                      className="w-full bg-base border border-border-subtle rounded-xl p-4 text-primary font-medium min-h-[150px] focus:outline-none focus:ring-2 focus:ring-teal/30 text-right leading-relaxed"
+                      className="w-full bg-base border-2 border-teal/20 rounded-2xl p-5 text-primary font-bold min-h-[160px] focus:outline-none focus:border-teal/50 focus:ring-4 focus:ring-teal/5 text-right leading-relaxed placeholder:text-secondary/30 transition-all text-lg shadow-inner"
                       placeholder="הזן כיתוב לפוסט..."
                     />
-                  ) : (
-                    <div dir="rtl" className="bg-base/50 p-5 rounded-xl border border-border-subtle text-primary text-right font-medium leading-relaxed whitespace-pre-wrap">
-                      {generatedCaption}
+                    <div className="absolute top-4 left-4 bg-teal/10 text-teal p-2 rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity">
+                      <Edit3 className="w-4 h-4" />
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
