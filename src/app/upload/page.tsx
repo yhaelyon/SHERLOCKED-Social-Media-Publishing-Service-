@@ -315,8 +315,8 @@ export default function UploadPage() {
               {/* VIRTUAL STORY OVERLAY */}
               {!isGeneratingCaption && generatedCaption && (
                 <div className="absolute inset-x-0 bottom-[15%] px-4 flex justify-center pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-4 rounded-3xl text-center font-bold text-[min(3.5vw,16px)] max-w-[90%] break-words whitespace-pre-wrap shadow-2xl border border-white/10 select-none leading-tight" dir="rtl">
-                    {generatedCaption}
+                  <div className="bg-black/80 backdrop-blur-md text-white px-8 py-5 rounded-[2.5rem] text-center font-bold text-[min(3.5vw,18px)] max-w-[90%] break-words shadow-2xl border border-white/10 select-none leading-relaxed" dir="rtl">
+                    {generatedCaption.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim()}
                   </div>
                 </div>
               )}
@@ -379,11 +379,13 @@ export default function UploadPage() {
       {step === 'PUBLISHING' && (
         <div className="flex-1 flex flex-col bg-elevated rounded-2xl border border-border-subtle p-12 animate-in fade-in duration-300 shadow-2xl">
           <div className="text-center mb-12">
-            <div className="relative inline-block">
-                <Loader2 className="w-20 h-20 text-teal animate-spin mx-auto mb-6" />
-                <span className="absolute inset-0 flex items-center justify-center text-3xl">🤖</span>
+            <div className="relative inline-block mb-10">
+                <div className="w-28 h-28 border-4 border-teal/10 border-t-teal rounded-full animate-spin mx-auto flex items-center justify-center shadow-xl shadow-teal/5"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/logo.webp" alt="Sherlocked" className="w-14 h-14 object-contain animate-pulse" />
+                </div>
             </div>
-            <h3 className="text-3xl font-black text-primary tracking-tight">מפיץ ברשתות...</h3>
+            <h3 className="text-4xl font-black text-primary tracking-tight">מפיץ ברשתות...</h3>
             <p className="text-teal font-bold mt-2">הרובוט של שרלוקד עובד בשבילך</p>
           </div>
 

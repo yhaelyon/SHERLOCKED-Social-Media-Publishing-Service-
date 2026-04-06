@@ -53,7 +53,11 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const rectY = Math.floor(height * 0.72); 
     
     // Split text into lines if it's long
-    const words = text.split(' ');
+    // STICKY: We strip emojis from the *processed image text bundle* 
+    // to avoid the broken box symbol in the photo itself.
+    const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
+    
+    const words = cleanText.split(' ');
     const lines: string[] = [];
     let currentLine = '';
     
