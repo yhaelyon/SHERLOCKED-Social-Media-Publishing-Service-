@@ -15,6 +15,9 @@ export default function AdminSettingsPage() {
   // New Items State
   const [newOperator, setNewOperator] = useState('');
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
+  const [localPrompts, setLocalPrompts] = useState<Record<string, string>>({});
+  const [roomSaving, setRoomSaving] = useState<Record<string, boolean>>({});
+  const [roomSuccess, setRoomSuccess] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchData();
@@ -32,6 +35,14 @@ export default function AdminSettingsPage() {
     setOperators(initData.operators || []);
     setRooms(initData.rooms || []);
     setSettings(settingsData || { general_prompt: '', retention_days: 30 });
+
+    // Initialize local prompts
+    const prompts: Record<string, string> = {};
+    (initData.rooms || []).forEach((r: any) => {
+      prompts[r.id] = r.specific_prompt || '';
+    });
+    setLocalPrompts(prompts);
+    
     setLoading(false);
   };
 
@@ -67,12 +78,27 @@ export default function AdminSettingsPage() {
     setSaving(false);
   };
 
-  const saveRoomPrompt = async (id: string, prompt: string) => {
-    await fetch(`/api/rooms`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, specific_prompt: prompt })
-    });
+  const saveRoomPrompt = async (id: string) => {
+    const prompt = localPrompts[id];
+    setRoomSaving(prev => ({ ...prev, [id]: true }));
+    setRoomSuccess(prev => ({ ...prev, [id]: false }));
+    
+    try {
+      const res = await fetch(`/api/rooms`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, specific_prompt: prompt })
+      });
+      
+      if (res.ok) {
+        setRoomSuccess(prev => ({ ...prev, [id]: true }));
+        setTimeout(() => setRoomSuccess(prev => ({ ...prev, [id]: false })), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRoomSaving(prev => ({ ...prev, [id]: false }));
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-10 h-10 text-teal animate-spin" /></div>;
@@ -194,15 +220,40 @@ export default function AdminSettingsPage() {
                                 
                                 {expandedRoom === room.id && (
                                     <div className="px-6 pb-6 pt-2 animate-in slide-in-from-top-2 duration-200">
-                                        <textarea 
-                                            defaultValue={room.specific_prompt}
-                                            onBlur={(e) => saveRoomPrompt(room.id, e.target.value)}
-                                            className="w-full bg-base border border-border-subtle rounded-2xl p-4 text-primary h-40 focus:outline-none focus:ring-1 focus:ring-teal/30 transition-all text-right text-sm leading-relaxed"
-                                            placeholder={`כתוב מידע ספציפי על החדר ${room.name} שיעזור ל-AI ליצור כיתובים מדויקים יותר...`}
-                                        />
-                                        <div className="flex justify-end mt-2">
-                                            <span className="text-[10px] text-secondary/60 flex items-center gap-1">
-                                                <CheckCircle className="w-3 h-3 text-green-500" /> נשמר אוטומטית בעזיבת השדה
+                                        <div className="relative group">
+                                            <textarea 
+                                                value={localPrompts[room.id] || ''}
+                                                onChange={(e) => setLocalPrompts(prev => ({ ...prev, [room.id]: e.target.value }))}
+                                                dir="rtl"
+                                                className="w-full bg-base border border-border-subtle rounded-3xl p-6 text-primary h-56 focus:outline-none focus:ring-4 focus:ring-teal/10 focus:border-teal transition-all text-right text-lg leading-relaxed shadow-inner"
+                                                placeholder={`כתוב מידע ספציפי על החדר ${room.name} שיעזור ל-AI ליצור כיתובים מדויקים יותר...`}
+                                            />
+                                            {roomSuccess[room.id] && (
+                                                <div className="absolute inset-0 bg-teal/10 backdrop-blur-[2px] rounded-3xl flex items-center justify-center animate-in fade-in duration-300">
+                                                    <div className="bg-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-teal/20 scale-110 drop-shadow-[0_20px_30px_rgba(20,184,166,0.3)]">
+                                                        <CheckCircle className="w-8 h-8 text-teal animate-bounce" />
+                                                        <span className="text-teal font-black text-xl">המידע נשמר בהצלחה!</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-between items-center mt-6">
+                                            <button 
+                                                onClick={() => saveRoomPrompt(room.id)}
+                                                disabled={roomSaving[room.id] || localPrompts[room.id] === room.specific_prompt}
+                                                className={`
+                                                    px-10 py-4 rounded-2xl font-black text-lg flex items-center gap-3 transition-all shadow-xl
+                                                    ${localPrompts[room.id] === room.specific_prompt 
+                                                        ? 'bg-border-subtle text-secondary/40 cursor-not-allowed border border-transparent' 
+                                                        : 'bg-teal text-white hover:scale-105 active:scale-95 shadow-teal/30 border border-teal/20'}
+                                                `}
+                                            >
+                                                {roomSaving[room.id] ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                                                {roomSaving[room.id] ? 'שומר שינויים...' : 'שמור מידע על החדר'}
+                                            </button>
+                                            
+                                            <span className="text-sm font-bold text-secondary/40 flex items-center gap-2 italic">
+                                                * המידע ישמש את ה-AI ביצירת פוסטים לחדר זה
                                             </span>
                                         </div>
                                     </div>
