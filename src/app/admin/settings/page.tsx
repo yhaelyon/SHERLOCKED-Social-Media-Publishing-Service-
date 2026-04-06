@@ -228,33 +228,36 @@ export default function AdminSettingsPage() {
                                                 className="w-full bg-base border border-border-subtle rounded-3xl p-6 text-primary h-56 focus:outline-none focus:ring-4 focus:ring-teal/10 focus:border-teal transition-all text-right text-lg leading-relaxed shadow-inner"
                                                 placeholder={`כתוב מידע ספציפי על החדר ${room.name} שיעזור ל-AI ליצור כיתובים מדויקים יותר...`}
                                             />
-                                            {roomSuccess[room.id] && (
-                                                <div className="absolute inset-0 bg-teal/10 backdrop-blur-[2px] rounded-3xl flex items-center justify-center animate-in fade-in duration-300">
-                                                    <div className="bg-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-teal/20 scale-110 drop-shadow-[0_20px_30px_rgba(20,184,166,0.3)]">
-                                                        <CheckCircle className="w-8 h-8 text-teal animate-bounce" />
-                                                        <span className="text-teal font-black text-xl">המידע נשמר בהצלחה!</span>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
-                                        <div className="flex justify-between items-center mt-6">
+                                        <div className="flex flex-row-reverse items-center justify-between mt-4">
+                                            <div className="flex items-center gap-2">
+                                                {roomSuccess[room.id] && (
+                                                    <div className="flex items-center gap-2 text-green-500 font-bold animate-in fade-in slide-in-from-right-2">
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        <span>נשמר</span>
+                                                    </div>
+                                                )}
+                                                {roomSaving[room.id] && (
+                                                    <div className="flex items-center gap-2 text-teal animate-pulse">
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        <span>שומר...</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <button 
                                                 onClick={() => saveRoomPrompt(room.id)}
                                                 disabled={roomSaving[room.id] || localPrompts[room.id] === room.specific_prompt}
                                                 className={`
-                                                    px-10 py-4 rounded-2xl font-black text-lg flex items-center gap-3 transition-all shadow-xl
+                                                    px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all
                                                     ${localPrompts[room.id] === room.specific_prompt 
-                                                        ? 'bg-border-subtle text-secondary/40 cursor-not-allowed border border-transparent' 
-                                                        : 'bg-teal text-white hover:scale-105 active:scale-95 shadow-teal/30 border border-teal/20'}
+                                                        ? 'bg-border-subtle text-secondary/40 cursor-not-allowed' 
+                                                        : 'bg-green-500 text-white hover:bg-green-600 shadow-md active:scale-95'}
                                                 `}
                                             >
-                                                {roomSaving[room.id] ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                                                {roomSaving[room.id] ? 'שומר שינויים...' : 'שמור מידע על החדר'}
+                                                <Save className="w-4 h-4" />
+                                                שמור
                                             </button>
-                                            
-                                            <span className="text-sm font-bold text-secondary/40 flex items-center gap-2 italic">
-                                                * המידע ישמש את ה-AI ביצירת פוסטים לחדר זה
-                                            </span>
                                         </div>
                                     </div>
                                 )}
