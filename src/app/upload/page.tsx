@@ -38,6 +38,8 @@ export default function UploadPage() {
   const [generatedCaption, setGeneratedCaption] = useState<string>('');
   const [postIndex, setPostIndex] = useState<number>(1);
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [publishResults, setPublishResults] = useState<PublishResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,9 +123,37 @@ export default function UploadPage() {
       finalCaption = `איזה כיף בחדר ${selectedRoom}! האלופים שלנו פיצחו את הכל! 🕵️‍♂️🔐 #שרלוקד #חדרבריחה`;
     }
     setGeneratedCaption(finalCaption);
-    setPostIndex(currPostIndex);
     setIsGeneratingCaption(false);
+    
+    // Trigger initial preview
+    generatePreview(finalCaption);
   };
+
+  const generatePreview = async (caption: string) => {
+    if (!fileData?.url || !caption) return;
+    setIsGeneratingPreview(true);
+    try {
+      const res = await fetch('/api/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: fileData.url, text: caption })
+      });
+      const data = await res.json();
+      if (data.previewUrl) setPreviewUrl(data.previewUrl);
+    } catch (e) {
+      console.error('Preview failed', e);
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  };
+
+  // Debounced preview generator for when user edits text
+  useEffect(() => {
+    if (step === 'PREVIEW' && generatedCaption) {
+      const timer = setTimeout(() => generatePreview(generatedCaption), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [generatedCaption, step]);
 
   const handleFinalPublish = async () => {
     setStep('PUBLISHING');
@@ -304,21 +334,20 @@ export default function UploadPage() {
       {/* SCREEN 2: PREVIEW */}
       {step === 'PREVIEW' && (
         <div className="flex flex-col gap-6 w-full max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-elevated rounded-3xl border border-border-subtle overflow-hidden shadow-2xl">
-            <div className="relative aspect-[4/5] bg-base w-full overflow-hidden">
-              {fileData?.type === 'image' ? (
-                <img src={fileData.url} alt="Preview" className="object-cover w-full h-full" />
-              ) : (
-                <video src={fileData?.url} controls className="w-full h-full object-cover" />
-              )}
-              
-              {/* VIRTUAL STORY OVERLAY */}
-              {!isGeneratingCaption && generatedCaption && (
-                <div className="absolute inset-x-0 bottom-[12%] px-4 flex justify-center pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="bg-black/50 backdrop-blur-md text-white px-10 py-7 rounded-[1.5rem] text-center font-bold text-[min(5vw,26px)] max-w-[90%] break-words shadow-2xl border border-white/10 select-none leading-relaxed" dir="rtl">
-                    {generatedCaption.trim()}
-                  </div>
+          <div className="bg-elevated rounded-3xl border border-border-subtle overflow-hidden shadow-2xl relative">
+            <div className="relative aspect-[9/16] bg-black w-full overflow-hidden flex items-center justify-center">
+              {isGeneratingPreview && (
+                <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  <span className="text-white text-xs font-bold uppercase tracking-widest">Rendering Real Preview...</span>
                 </div>
+              )}
+              {previewUrl ? (
+                <img src={previewUrl} alt="Real Preview" className="object-contain w-full h-full" />
+              ) : fileData?.type === 'image' ? (
+                <img src={fileData.url} alt="Preview" className="object-cover w-full h-full opacity-50" />
+              ) : (
+                <video src={fileData?.url} controls className="w-full h-full object-cover opacity-50" />
               )}
             </div>
             

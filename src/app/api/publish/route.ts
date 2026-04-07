@@ -45,7 +45,7 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const textAreaWidth = Math.floor(width * 0.85);
 
     // Render the text using sharp's native text operation (handles RTL/Emoji)
-    // Using higher DPI to increase font size for mobile readability
+    // Using 450 DPI for high-resolution 1080p mobile readability
     const textLayer = await (sharp as any)({
       text: {
         text: `<span foreground="white">${text}</span>`,
@@ -53,7 +53,7 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
         rgba: true,
         width: textAreaWidth,
         align: 'center',
-        dpi: 150, // Higher DPI = Larger Font
+        dpi: 450, // Real-world scaling for 1080p
       }
     })
     .png()
@@ -63,13 +63,13 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const textW = textMeta.width || 0;
     const textH = textMeta.height || 0;
 
-    const rectPaddingX = 80;
-    const rectPaddingY = 50;
+    const rectPaddingX = 100;
+    const rectPaddingY = 70;
     const rectWidth = textW + rectPaddingX;
     const rectHeight = textH + rectPaddingY;
 
     // Generate Background Box with rounded corners
-    const borderRadius = 45;
+    const borderRadius = 50;
     const bgBox = await sharp({
       create: {
         width: rectWidth,
