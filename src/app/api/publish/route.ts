@@ -34,10 +34,27 @@ async function processImageWithText(imageUrl: string, text: string, fontScale: n
     const arrayBuffer = await response.arrayBuffer();
     const inputBuffer = Buffer.from(arrayBuffer);
 
-    // 2. Get image dimensions
-    const metadata = await sharp(inputBuffer).metadata();
-    const width = metadata.width || 1080;
-    const height = metadata.height || 1920;
+    // 2. Prepare 9:16 Canvas (Instagram Story Standard 1080x1920)
+    // Avoid Instagram zooming/resizing by forcing exact standard dimensions
+    const width = 1080;
+    const height = 1920;
+
+    // Create a blurred background from the original image to fill the 9:16 frame nicely
+    const blurredBg = await sharp(inputBuffer)
+      .resize(width, height, { fit: 'cover' })
+      .blur(40)
+      .modulate({ brightness: 0.5 }) // Darken background to make text readable
+      .toBuffer();
+
+    // Resize original image preserving aspect ratio to fit inside 9:16
+    const foreground = await sharp(inputBuffer)
+      .resize(width, height, { fit: 'inside' })
+      .toBuffer();
+
+    // Composite them into the new perfect base canvas
+    const baseCanvasBuffer = await sharp(blurredBg)
+      .composite([{ input: foreground, gravity: 'center' }])
+      .toBuffer();
 
     // 3. Prepare text overlay
     const rectY = Math.floor(height * 0.82); // Lowered for better visual balance
@@ -103,7 +120,7 @@ async function processImageWithText(imageUrl: string, text: string, fontScale: n
     .png()
     .toBuffer();
 
-    const outputBuffer = await sharp(inputBuffer)
+    const outputBuffer = await sharp(baseCanvasBuffer)
       .composite([
         { 
           input: bgBox, 
