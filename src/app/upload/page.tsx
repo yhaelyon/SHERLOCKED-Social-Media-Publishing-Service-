@@ -40,6 +40,7 @@ export default function UploadPage() {
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fontScale, setFontScale] = useState<number>(1.0);
   const [publishResults, setPublishResults] = useState<PublishResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,14 +130,14 @@ export default function UploadPage() {
     generatePreview(finalCaption);
   };
 
-  const generatePreview = async (caption: string) => {
+  const generatePreview = async (caption: string, scale: number = fontScale) => {
     if (!fileData?.url || !caption) return;
     setIsGeneratingPreview(true);
     try {
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: fileData.url, text: caption })
+        body: JSON.stringify({ imageUrl: fileData.url, text: caption, fontScale: scale })
       });
       const data = await res.json();
       if (data.previewUrl) setPreviewUrl(data.previewUrl);
@@ -150,10 +151,10 @@ export default function UploadPage() {
   // Debounced preview generator for when user edits text
   useEffect(() => {
     if (step === 'PREVIEW' && generatedCaption) {
-      const timer = setTimeout(() => generatePreview(generatedCaption), 1000);
+      const timer = setTimeout(() => generatePreview(generatedCaption, fontScale), 1000);
       return () => clearTimeout(timer);
     }
-  }, [generatedCaption, step]);
+  }, [generatedCaption, fontScale, step]);
 
   const handleFinalPublish = async () => {
     setStep('PUBLISHING');
@@ -171,7 +172,8 @@ export default function UploadPage() {
           postIndex: postIndex,
           targets: ['ig_story'],
           operatorName: selectedOperator,
-          roomName: selectedRoom
+          roomName: selectedRoom,
+          fontScale: fontScale
         })
       });
       const data = await pubRes.json();
@@ -376,6 +378,25 @@ export default function UploadPage() {
                     />
                     <div className="absolute top-4 left-4 bg-teal/10 text-teal p-2 rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity">
                       <Edit3 className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-base border border-teal/20 p-4 rounded-2xl">
+                    <span className="text-secondary font-bold mr-4">גודל טקסט:</span>
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => setFontScale(s => Math.max(0.5, s - 0.1))}
+                        className="bg-teal/10 text-teal p-2 rounded-full hover:bg-teal hover:text-white transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </button>
+                      <span className="font-black text-primary w-12 text-center text-lg">{Math.round(fontScale * 100)}%</span>
+                      <button 
+                        onClick={() => setFontScale(s => Math.min(2.0, s + 0.1))}
+                        className="bg-teal/10 text-teal p-2 rounded-full hover:bg-teal hover:text-white transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      </button>
                     </div>
                   </div>
                 </div>

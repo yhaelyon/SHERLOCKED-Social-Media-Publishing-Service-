@@ -27,7 +27,7 @@ async function pollUntilReady(containerId: string, maxAttempts = 15, intervalMs 
   throw new Error('Instagram polling timeout exceeded');
 }
 
-async function processImageWithText(imageUrl: string, text: string): Promise<string> {
+async function processImageWithText(imageUrl: string, text: string, fontScale: number = 1.0): Promise<string> {
   try {
     // 1. Download image
     const response = await fetch(imageUrl);
@@ -40,12 +40,13 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const height = metadata.height || 1920;
 
     // 3. Prepare text overlay
-    const padding = 50;
     const rectY = Math.floor(height * 0.82); // Lowered for better visual balance
     const textAreaWidth = Math.floor(width * 0.85);
 
+    // Calculate dynamic DPI to ensure it scales precisely with image resolution
+    const dynamicDpi = Math.floor((width / 1080) * 400 * fontScale);
+
     // Render the text using sharp's native text operation (handles RTL/Emoji)
-    // Using 450 DPI for high-resolution 1080p mobile readability
     const textLayer = await (sharp as any)({
       text: {
         text: `<span foreground="white">${text}</span>`,
@@ -53,23 +54,40 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
         rgba: true,
         width: textAreaWidth,
         align: 'center',
-        dpi: 450, // Real-world scaling for 1080p
+        dpi: dynamicDpi,
       }
     })
     .png()
     .toBuffer();
 
     const textMeta = await sharp(textLayer).metadata();
-    const textW = textMeta.width || 0;
-    const textH = textMeta.height || 0;
+    let textW = textMeta.width || 0;
+    let textH = textMeta.height || 0;
 
-    const rectPaddingX = 100;
-    const rectPaddingY = 70;
-    const rectWidth = textW + rectPaddingX;
+    // Strict maximum width to prevent overflow out of the frame
+    const absoluteMaxWidth = Math.floor(width * 0.90);
+    let finalTextLayer = textLayer;
+    if (textW > absoluteMaxWidth) {
+      const scaleFactor = absoluteMaxWidth / textW;
+      finalTextLayer = await sharp(textLayer)
+        .resize(absoluteMaxWidth, Math.floor(textH * scaleFactor))
+        .toBuffer();
+      textW = absoluteMaxWidth;
+      textH = Math.floor(textH * scaleFactor);
+    }
+
+    const rectPaddingX = Math.floor(width * 0.08);
+    const rectPaddingY = Math.floor(height * 0.04);
+    
+    // Calculate box dimensions, constrained to a maximum of 96% of the screen width
+    let rectWidth = textW + rectPaddingX;
+    if (rectWidth > width * 0.96) {
+       rectWidth = Math.floor(width * 0.96);
+    }
     const rectHeight = textH + rectPaddingY;
+    const borderRadius = Math.floor(width * 0.045);
 
     // Generate Background Box with rounded corners
-    const borderRadius = 50;
     const bgBox = await sharp({
       create: {
         width: rectWidth,
@@ -89,11 +107,11 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
       .composite([
         { 
           input: bgBox, 
-          top: rectY - (rectPaddingY / 2), 
+          top: rectY - Math.floor(rectPaddingY / 2), 
           left: Math.floor((width - rectWidth) / 2) 
         },
         { 
-          input: textLayer, 
+          input: finalTextLayer, 
           top: rectY, 
           left: Math.floor((width - textW) / 2) 
         }
@@ -145,7 +163,7 @@ async function igFeed(fileUrl: string, caption: string, type: 'image' | 'video')
   return pubData.id;
 }
 
-async function igStory(fileUrl: string, caption: string, type: 'image' | 'video') {
+async function igStory(fileUrl: string, caption: string, type: 'image' | 'video', fontScale: number = 1.0) {
   const body: any = { 
     media_type: 'STORIES', 
     access_token: TOKEN
@@ -153,7 +171,7 @@ async function igStory(fileUrl: string, caption: string, type: 'image' | 'video'
   
   let finalUrl = fileUrl;
   if (type === 'image') {
-    finalUrl = await processImageWithText(fileUrl, caption);
+    finalUrl = await processImageWithText(fileUrl, caption, fontScale);
     body.image_url = finalUrl;
   } else {
     body.video_url = fileUrl;
@@ -229,7 +247,7 @@ async function fbStory(fileUrl: string, caption: string, type: 'image' | 'video'
 // -------------------------------------------------------------
 export async function POST(req: Request) {
   try {
-    const { fileUrl, fileType, caption, postIndex, targets, operatorName, roomName } = await req.json();
+    const { fileUrl, fileType, caption, postIndex, targets, operatorName, roomName, fontScale = 1.0 } = await req.json();
 
     if (!fileUrl || !fileType || !caption) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
@@ -259,7 +277,7 @@ export async function POST(req: Request) {
 
     const promises = [];
     if (targets.includes('ig_feed')) promises.push(igFeed(fileUrl, caption, fileType).then(id => ({ t: 'ig_feed', id })).catch(e => ({ t: 'ig_feed', err: String(e) })));
-    if (targets.includes('ig_story')) promises.push(igStory(fileUrl, caption, fileType).then(id => ({ t: 'ig_story', id })).catch(e => ({ t: 'ig_story', err: String(e) })));
+    if (targets.includes('ig_story')) promises.push(igStory(fileUrl, caption, fileType, Number(fontScale)).then(id => ({ t: 'ig_story', id })).catch(e => ({ t: 'ig_story', err: String(e) })));
     if (targets.includes('fb_feed')) promises.push(fbFeed(fileUrl, caption, fileType).then(id => ({ t: 'fb_feed', id })).catch(e => ({ t: 'fb_feed', err: String(e) })));
     if (targets.includes('fb_story')) promises.push(fbStory(fileUrl, caption, fileType).then(id => ({ t: 'fb_story', id })).catch(e => ({ t: 'fb_story', err: String(e) })));
 
