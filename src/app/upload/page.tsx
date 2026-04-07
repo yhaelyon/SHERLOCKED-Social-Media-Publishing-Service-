@@ -314,8 +314,8 @@ export default function UploadPage() {
               
               {/* VIRTUAL STORY OVERLAY */}
               {!isGeneratingCaption && generatedCaption && (
-                <div className="absolute inset-x-0 bottom-[8%] px-4 flex justify-center pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="bg-black/50 backdrop-blur-md text-white px-8 py-5 rounded-[2.5rem] text-center font-bold text-[min(3.5vw,18px)] max-w-[90%] break-words shadow-2xl border border-white/10 select-none leading-relaxed" dir="rtl">
+                <div className="absolute inset-x-0 bottom-[12%] px-4 flex justify-center pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-black/50 backdrop-blur-md text-white px-10 py-7 rounded-[1.5rem] text-center font-bold text-[min(5vw,26px)] max-w-[90%] break-words shadow-2xl border border-white/10 select-none leading-relaxed" dir="rtl">
                     {generatedCaption.trim()}
                   </div>
                 </div>

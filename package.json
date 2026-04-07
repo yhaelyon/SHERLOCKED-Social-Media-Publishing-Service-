@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "mkdir -p ~/.local/share/fonts && cp src/assets/fonts/*.ttf ~/.local/share/fonts/ && fc-cache -f || true"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

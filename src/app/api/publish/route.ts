@@ -41,17 +41,19 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
 
     // 3. Prepare text overlay
     const padding = 50;
-    const rectY = Math.floor(height * 0.78);
+    const rectY = Math.floor(height * 0.82); // Lowered for better visual balance
     const textAreaWidth = Math.floor(width * 0.85);
 
     // Render the text using sharp's native text operation (handles RTL/Emoji)
-    const textLayer = await sharp({
+    // Using higher DPI to increase font size for mobile readability
+    const textLayer = await (sharp as any)({
       text: {
         text: `<span foreground="white">${text}</span>`,
         font: 'Assistant, "Noto Color Emoji", "Apple Color Emoji", sans-serif',
         rgba: true,
         width: textAreaWidth,
         align: 'center',
+        dpi: 150, // Higher DPI = Larger Font
       }
     })
     .png()
@@ -61,12 +63,13 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
     const textW = textMeta.width || 0;
     const textH = textMeta.height || 0;
 
-    const rectPaddingX = 60;
-    const rectPaddingY = 40;
+    const rectPaddingX = 80;
+    const rectPaddingY = 50;
     const rectWidth = textW + rectPaddingX;
     const rectHeight = textH + rectPaddingY;
 
-    // Generate Background Box
+    // Generate Background Box with rounded corners
+    const borderRadius = 45;
     const bgBox = await sharp({
       create: {
         width: rectWidth,
@@ -75,6 +78,10 @@ async function processImageWithText(imageUrl: string, text: string): Promise<str
         background: { r: 0, g: 0, b: 0, alpha: 0.5 }
       }
     })
+    .composite([{
+      input: Buffer.from(`<svg><rect x="0" y="0" width="${rectWidth}" height="${rectHeight}" rx="${borderRadius}" ry="${borderRadius}" fill="black" /></svg>`),
+      blend: 'dest-in'
+    }])
     .png()
     .toBuffer();
 
